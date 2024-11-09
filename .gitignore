@@ -1,5 +1,6 @@
 jdk1.8.0_152/*
-data/*
+data/*.evio
+data/*.evio.*
 coda_scripts/*
 3.10_arm/linuxvme/ti/*
 3.10_arm/linuxvme/tir/*

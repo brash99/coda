@@ -1,0 +1,37 @@
+<!-- ===================== Buffer 56 contains 65 words (260 bytes) ===================== -->
+   <event format="evio" count="56" content="bank" data_type="0x10" tag="65360" padding="0" num="1" length="64" ndata="63">
+      <bank content="segment" data_type="0x20" tag="65312" padding="0" num="1" length="7" ndata="6">
+         <uint64 data_type="0xa" tag="1" padding="0" length="2" ndata="1">
+            0x0000000000000036  
+         </uint64>
+         <uint16 data_type="0x5" tag="1" padding="2" length="1" ndata="1">
+            0x0001  
+         </uint16>
+         <uint32 data_type="0x1" tag="1" padding="0" length="0" ndata="0">
+         </uint32>
+      </bank>
+      <bank content="bank" data_type="0x10" tag="1" padding="0" num="1" length="54" ndata="53">
+         <uint32 data_type="0x1" tag="5" padding="0" num="0" length="23" ndata="22">
+            0xda000022  0x00000000  0x00000001  0x00000002  
+            0x00000003  0x00000004  0x00000005  0x00000006  
+            0x00000007  0x00000008  0x00000009  0x0000000a  
+            0x0000000b  0x0000000c  0x0000000d  0x0000000e  
+            0x0000000f  0x00000010  0x00000011  0x00000012  
+            0x00000013  0xda0000ff  
+         </uint32>
+         <uint32 data_type="0x1" tag="792" padding="0" num="1" length="19" ndata="18">
+            0xfa001000  0xf8004099  0xf810407b  0xf80240a5  
+            0xf812407e  0xf8044099  0xf814408e  0xf806408c  
+            0xf8164072  0xf8084074  0xf8184097  0xf80a4091  
+            0xf81a4070  0xf80c4082  0xf81c4085  0xf80e4077  
+            0xf81e4070  0xfc000035  
+         </uint32>
+         <uint32 data_type="0x1" tag="775" padding="0" num="1" length="8" ndata="7">
+            0xfa000400  0xf80047c5  0xf8024771  0xf80447d6  
+            0xf80647af  0xfc000002  0xdaebd00d  
+         </uint32>
+      </bank>
+   </event>
+
+   <!-- end buffer 56 -->
+
