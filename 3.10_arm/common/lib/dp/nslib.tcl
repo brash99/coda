@@ -1,0 +1,610 @@
+# source the nscap file
+
+#if {[file exists $env(RCDATABASE)/nscap] == 1} {
+#    source $dp_library/ns/nscap
+#} else {
+#    puts stderr "Can't find $dp_library/ns/nscap"
+#    exit 1
+#}
+
+# global variables
+
+set nsID 0
+set nsTickets(null) ""
+set nsDefault 1
+set nsPort ""
+set nsHost "alcor"
+set nsExiting 0
+
+###################################################################
+# Nameserver initialization routine
+#
+###################################################################
+
+#
+# ns_connection -- get connection to the nameserver
+#
+proc ns_connect {} {
+    global nsHost env
+
+    if [catch {msql connect ns_connection $nsHost}] {
+	error "Can't establish connection to nameserver at $nsHost"
+    }
+    ns_connection set database $env(EXPID)
+}
+
+#
+# ns_CrashHandler -- called when the primary server goes down
+#
+proc ns_CrashHandler {} {
+    global nsExiting tcl_interactive
+    
+    puts "Here ex $nsExiting $tcl_interactive" 
+
+    if {$nsExiting} {
+	return
+    }
+    set tries 0
+    while { $tries < 4 } {
+	if ![catch ns_GetNSConn] return
+	dp_after 2000
+	incr tries
+    }
+}
+
+
+#
+# ns_RelNSConn -- release connection to the nameserver
+#
+proc ns_RelNSConn {} {
+    ns_connection disconnect
+}
+
+
+#######################################################################
+# Client Interface routines
+#
+#######################################################################
+
+
+#
+# ns_FindServices -- return a list of {srvc {host port}} where srvc
+# matches the pattern.
+# If the service is not running, {host port} will be empty.
+#
+proc ns_FindServices {srvcList} {
+    set result {}
+    ns_connect
+    foreach srvc $srvcList {
+	set tries 0
+	ns_connection query "SELECT host,port FROM process WHERE name='$srvc' "
+        set result [concat $result [list $srvc [ns_connection get next]]]
+    }
+    ns_RelNSConn
+    return $result
+}
+
+
+#
+# ns_ListServices -- return a list of services matching pattern
+#
+proc ns_ListServices {pattern} {
+    ns_connect
+    if [catch {ns_connection query "SELECT name FROM process"}] ns_CrashHandler
+    set res [ns_connection get rest]
+    ns_RelNSConn
+    return $res
+}
+
+
+#
+# ns_LaunchServices -- launch services matching pattern
+# Ignore the command if the service is in the "running" or 
+# "launching" state
+#
+proc ns_LaunchServices {srvcList} {
+#    foreach srvc $srvcList {
+#        ns_RPC ns_LaunchServices $srvc
+#    }
+}
+
+
+#
+# ns_ServiceState -- return the current state of services matching
+# pattern. The possible states are: onDemand, launching or dead.
+# If flag is set to "dead", the service will be reset.
+#
+proc ns_ServiceState {srvcList {flag {}}} {
+    set result {}
+    ns_connect
+    foreach srvc $srvcList {
+	if [catch "ns_connection query \"SELECT state FROM process WHERE name='$srvc'\""] ns_CrashHandler
+        set result [concat $result [ns_connection get next]]
+    }
+    ns_RelNSConn
+
+    return $result
+}
+
+
+#
+# ns_AuthenticateService -- ask the server to authenticate the service.
+# Returns a pair of tickets to be used for communication
+# between the client and the service.
+# If the service is not authentic, it will be marked dead
+#
+proc ns_AuthenticateService {srvcName} {
+}
+
+#
+# ns_KillServices -- ask the name server to kill the services specified
+#                    by srvcList
+#
+proc ns_KillServices {srvcList} {
+}
+
+#
+# ns_IncrConnection -- increment the connection count of services 
+#                      specified by pattern
+#
+proc ns_IncrConnection {pattern} {
+}
+
+#
+# ns_DecrConnection -- decrement the connection count of services
+#                      specified by pattern
+proc ns_DecrConnection {pattern} {
+}
+
+###################################################################
+# Server Interface routines
+#
+###################################################################
+
+#
+# ns_AdvertiseService -- called by the service to advertise
+# its port number to the nameserver. Ticket should be the
+# one issued by the nameserver when it launched the service.
+# If null, the service will be treated as unregistered.
+#
+proc ns_AdvertiseService {name host port pid {ticket {}} {check none} {state alive}} {
+    ns_connect
+    ns_connection query "SELECT name FROM process WHERE name='$name'"
+    if [ns_connection get rows] {
+	set res [ns_connection query "UPDATE process SET host='$host',port=$port,state='$state',pid=$pid WHERE name='$name'"]
+    } else {
+	set res [ns_connection query "INSERT INTO process (name,host,port,state,pid) VALUES ('$name','$host',$port,'$state',$pid)"]
+    }
+    ns_RelNSConn
+    return $res 
+}
+
+
+#
+# ns_UnadvertiseService -- the inverse of ns_AdvertiseService
+# Unregistered service will be deleted. Registered service
+# will have its port number reset
+#
+proc ns_UnadvertiseService {srvcName {ticket {}}} {
+    ns_connect
+    set res [ns_connection query "DELETE FROM process WHERE name='$srvcName'"]
+    ns_RelNSConn
+    return $res
+}
+
+
+# ns_Authenticate -- called by the client to authenticate a service
+#
+proc ns_Authenticate {ticket} {
+
+}
+
+#
+# ns_RecordTicket -- record tickets generated by the nameserver
+#
+proc ns_RecordTicket {tickets} {
+}
+
+
+
+######################################################################
+# Higher Level API
+#
+######################################################################
+
+#
+# NS_SetHostPort -- set the default nameserver host and port
+#
+proc NS_SetHostPort {host port} {
+    global nsPort nsHost nsDefault
+
+    set nsDefault 0
+    set nsHost $host
+    return
+}
+
+#
+# NS_UnsetHostPort -- unset the default nameserver host and port
+#
+proc NS_UnsetHostPort {} {
+    global nsPort nsHost nsDefault
+
+    set nsDefault 1
+    set nsHost ""
+    set nsPort ""
+}    
+
+
+#
+# NS_GetServiceConn -- connect to a service and return the connection handle.
+# If a flag is set to "authenticate", authentication of the service
+# will be performed.
+# If srvc is a pattern indicating a group of service, the service with the
+# minimum number of connections is returned.
+#
+#proc delay {s} {expr [ns_systime]-$s}
+proc NS_GetServiceConn {srvc {flag {}}} {
+    set tries 0
+    
+    while {$tries < 3} {
+        if [catch "ns_FindServices $srvc" result] {
+            error $result
+        } else {
+            set srvc [lindex $result 0]
+            set hp [lindex $result 1]
+            if {$hp == ""} {
+		puts "service: $srvc hp: $hp"
+                if {[catch {NS_LaunchService $srvc} result]} {
+                    error "$result"
+                } else {
+                    if {[catch {ns_FindServices $srvc} result]} {
+                        error $result
+                    } else {
+                        set hp [lindex $result 1]
+                        if {$hp == ""} continue
+                    }
+                }
+            }
+
+            # Ask the nameserver to authenticate the service
+            if {$flag == "authenticate"} {
+                if {[catch {ns_AuthenticateService $srvc} result]} {
+                    error "$result"
+                } else {
+                    set tickets  $result
+                }
+            }
+                    
+            set host [lindex $hp 0]
+            set port [lindex $hp 1]
+            if {[catch {dp_MakeRPCClient $host $port} handle]} {
+                # something bad happened to the service
+                incr tries
+                ns_ServiceState $srvc dead
+                continue
+            } else {
+		
+                if {$flag == "authenticate"} {
+                    if {[dp_RPC $handle ns_Authenticate [lindex $tickets 0]] ==
+                    [lindex $tickets 1]} {
+                        ns_IncrConnection $srvc
+                        dp_atclose $handle appendUnique "ns_DecrConnection $srvc"
+                        return $handle
+                    } else {
+                        error "$srvc is not an authentic service"
+                    }
+                } else {
+                    ns_IncrConnection $srvc
+                    dp_atclose $handle appendUnique "ns_DecrConnection $srvc"
+                    return $handle
+                }
+            }
+        }
+    }
+    ns_ServiceState $srvc dead
+    error "Can't connect to $srvc"
+}
+
+#
+# NS_GetServiceHP -- returns the host and port of the service
+# If srvc is a pattern indicating a group of services, the service with the
+# minimum number of connections is returned.
+
+#
+proc NS_GetServiceHP {srvc} {
+
+    set tries 0
+    
+    while {$tries < 3} {
+        if {[catch {ns_FindServices $srvc} result]} {
+            error $result
+        } else {
+            incr tries
+            set srvc [lindex $result 0]
+            set hp [lindex $result 1]
+            if {$hp == ""} {
+                if {[catch {NS_LaunchService $srvc} result]} {
+                    error "$result"
+                } 
+            } else {
+                return $hp
+            }
+        }
+    }
+    error "Can't get {host port} for $srvc"
+}
+
+
+
+########################################################################
+# The following routines are used for multiple services
+########################################################################
+
+#
+# NS_FindServices -- return a list of {srvc {host port}} for services
+#                    specified in srvcList
+#
+proc NS_FindServices {srvcList} {
+    if {[catch {ns_FindServices $srvcList} result]} {
+        error "$result"
+    } else {
+        if {[lindex $result 1] == ""} {
+            error "$srvc does not exist"
+        } 
+        return "[lindex $result 1]"
+    }
+}
+
+
+#
+# NS_LaunchServices -- launch a service and wait for it to enter
+# the "running" state
+# If the the service doesn't come up in 25 seconds, an error is
+# raised.
+#
+proc NS_LaunchServices {srvcList} {
+    set tries 0
+
+    # service is not currently running
+    while {$tries < 250} {
+        if {[catch {ns_ServiceState $srvcList} result]} {
+            error "$result"
+        } else {
+            incr tries
+            set dList {}
+            set lList {}
+            foreach x $result {
+                set state [lindex $x 1]
+                if {$state == "onDemand"} {
+                    lappend dList [lindex $x 0]
+                } elseif {$state == "launching"} {
+                    lappend lList [lindex $x 0]
+                }
+            }
+
+            if {$dList != {}} {
+                if {[catch {ns_LaunchServices $dList} result]} {
+                    error "$result"
+                } else {
+                    dp_after 100
+                    continue
+                }
+            } elseif {$lList != {}} {
+                dp_after 100
+                continue
+            } else {
+                return 
+            }
+        }
+    }
+}
+
+#
+# NS_GetServicesHP -- returns a list of {srvc {host port} conn} for services
+#                     specified by srvcList. Conn is the number of connections
+#                     the service is currently maintaining.
+#
+proc NS_GetServicesHP {srvcList} {
+
+    set tries 0
+    
+    while {$tries < 3} {
+        if {[catch {NS_FindServices $srvcList} result]} {
+            error $result
+        } else {
+            incr tries
+            set sList {}
+            foreach x $result {
+                if {[lindex $x 1] == ""} {
+                    lappend sList [lindex $x 0]
+                }
+            }
+            if {$sList != {} } {
+                if {[catch {NS_LaunchServices $sList} result]} {
+                    error "$result"
+                } 
+            } else {
+                return "$result"
+            }
+        }
+    }
+    return "$result"
+}
+
+
+#
+# NS_BadConnection -- tell the nameserver about the bad service connection
+#
+proc NS_BadConnection {srvc} {
+    if {[catch {ns_ServiceState $srvc dead} result]} {
+        error $result
+    } 
+}
+
+
+#
+# NS_SrvcInit -- should be called by any service when it starts up
+#                Srvc is the name of the service and can be determined by 
+#                calling NS_GetSrvcName.
+#                Host is the name of the host machine and can be determined by
+#                calling NS_GetHostName.
+#                Port is the port number of the service and is the return
+#                value of dp_MakeRPCServer.
+#
+proc NS_SrvcInit {srvc host port {check none}} {
+    global nsMyTicket argv
+
+    # Check if all the args are supplied
+    if {$port == ""} {
+        error "No port number given!"
+    }
+    if {$srvc == ""} {
+        error "No service name given!"
+    }
+    if {$host == ""} {
+        set host [NS_GetHostName]
+    }
+
+    # Get the ticket if it exists
+    if {[lindex [dp_isready stdin] 0]} {
+        set tickets [gets stdin]
+        set nsMyTicket [lindex $tickets 1]
+        ns_RecordTicket $tickets
+    } else {
+        set nsMyTicket {}
+    }
+
+    ns_AdvertiseService $srvc $host $port [pid] $nsMyTicket $check
+}
+
+#
+# NS_GetSrvcName -- return the service name given in argv after the -service
+#                   flag
+#
+proc NS_GetSrvcName {} {
+    global argv
+
+    set srvc ""
+    set doServiceFlag 0
+
+    # get the name of the service from the argv
+    foreach i $argv {
+        if {$i == "-service"} {
+            set doServiceFlag 1;
+        } else {
+            if {$doServiceFlag} {
+                set srvc $i;
+                set doServiceFlag 0;
+                return $srvc
+            }
+        }
+    }
+}
+
+#
+# NS_GetHostName -- return the host name by calling /bin/hostname
+#
+proc NS_GetHostName {} {
+    return [exec "hostname"]
+}
+
+#
+# NS_SrvcExit -- should be called by the exiting service
+#
+proc NS_SrvcExit {srvc} {
+    global nsMyTicket
+
+    ns_UnadvertiseService $srvc $nsMyTicket
+}
+
+
+###########################################################################
+#
+# Very high level API...
+#
+#
+###########################################################################
+
+#
+# This procedure is called by a server to add itself to the nameserver.
+# Note: If the server should die then the dp_atclose handler in nsd will
+# do the unadvertise.
+proc NS_ServerInit {name} {
+    set host [NS_GetHostName]
+    set port [dp_MakeRPCServer 0]
+    
+    NS_SrvcInit $name $host $port
+}
+
+#
+#
+#
+#
+proc TDP_ask {name args} {
+    global nsServerHandleCache errorInfo
+
+    if { ![info exist nsServerHandleCache($name)] } {
+	set nsServerHandleCache($name) [NS_GetServiceConn $name]
+    }
+    
+    set tries 0
+    while { $tries<2} {
+        if { [catch "dp_RPC $nsServerHandleCache($name) $args" result] } {
+	    puts "result $result"
+            # error in performing RPC.   Errors from bad connections
+            # look like: file "file3" isn't open.
+            if { [regexp {file \"[a-z0-9]*\" isn't open} $result]  ||
+                 [regexp {bad file identifier \"[a-z0-9]*\"} $result]} {
+                set nsServerHandleCache($name) [NS_GetServiceConn $name]
+                set result ""
+                incr tries
+            } else {
+		# This is the clients error - pass it on
+                error "errorInfo: $errorInfo; $result"
+            }
+        } else {
+            return $result
+        }
+    }
+
+    # The server is probably dead
+    # The chances of getting here should be very small
+    error "server $name is not currently running"
+	
+}
+#
+#
+#
+#
+proc TDP_tell {name args} {
+    global nsServerHandleCache errorInfo
+
+    if { ![info exist nsServerHandleCache($name)] } {
+	set nsServerHandleCache($name) [NS_GetServiceConn $name]
+    }
+    
+    set tries 0
+    while { $tries<2} {
+        if { [catch "dp_RDO $nsServerHandleCache($name) $args" result] } {
+            # error in performing RPC.   Errors from bad connections
+            # look like: file "file3" isn't open.
+            if { [regexp {file \"[a-z0-9]*\" isn't open} $result]  ||
+                 [regexp {bad file identifier \"[a-z0-9]*\"} $result]} {
+                set nsServerHandleCache($name) [NS_GetServiceConn $name]
+                set result ""
+                incr tries
+            } else {
+		# This is the clients error - pass it on
+                error "errorInfo: $errorInfo; $result"
+            }
+        } else {
+            return
+        }
+    }
+    # The server is probably dead
+    # The chances of getting here should be very small
+
+    error "server $name is not currently running"
+	
+}
+

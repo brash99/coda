@@ -1,0 +1,16 @@
+#!/bin/csh -f
+
+#Starts cMsg browser interface 
+
+# vhg, 23-Sep-2010
+
+# To start cMb gui
+# cmb -<option> <value>
+#
+#  <option>
+#-------------
+#  -h or -help        :   prints help
+
+setenv CLASSPATH "$CODA/common/jar/*"
+
+$JAVA_HOME/bin/java -Xms200m -Xmx500m -Dcom.sun.management.jmxremote ui.cMbUILite $1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12

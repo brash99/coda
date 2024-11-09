@@ -1,0 +1,14 @@
+<registration>
+   <client>
+      <name>PEB1</name>
+      <hostname>dafarm10.jlab.org</hostname>
+      <containerhost>dafarm10.jlab.org</containerhost>
+      <portnumber>45701</portnumber>
+   </client>
+   <client>
+      <name>ROC2</name>
+      <hostname>dafarm10.jlab.org</hostname>
+      <containerhost>dafarm10.jlab.org</containerhost>
+      <portnumber>45700</portnumber>
+   </client>
+</registration>

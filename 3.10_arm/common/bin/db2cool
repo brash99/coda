@@ -1,0 +1,11 @@
+#!/bin/csh -f
+
+#Translates sql database information into cool confguration description
+# author: vhg, 29-aug-2013
+
+# set classpath
+setenv CLASSPATH "$CODA/common/jar/*:$CODA/common/jar/jena/*"
+
+
+$JAVA_HOME/bin/java org.jlab.coda.afecs.sqldb.Db2Cool $1 $2 $3 $4
+

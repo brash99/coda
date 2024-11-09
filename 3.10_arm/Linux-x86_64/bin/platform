@@ -1,0 +1,14 @@
+#!/bin/csh -f
+
+#Starts Afecs platform
+# author: vhg, 29-aug-2013
+
+# set classpath
+setenv CLASSPATH "$CODA/common/jar/*:$CODA/common/jar/jena/*"
+
+umask 000
+
+# start the platform
+$JAVA_HOME/bin/java -Xms200m -Xmx2048m -XX:-UseConcMarkSweepGC -Djava.net.preferIPv4Stack=true org.jlab.coda.afecs.platform.APlatform $1
+#$JAVA_HOME/bin/java -Xms200m -Xmx2048m -XX:-UseConcMarkSweepGC -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -Djava.net.preferIPv4Stack=true org.jlab.coda.afecs.platform.APlatform $1
+

@@ -1,0 +1,11 @@
+#!/bin/csh -f
+
+#Starts InfluxDB injector
+# author: vhg, 03.09.18
+
+# set classpath
+setenv CLASSPATH "$CODA/common/jar/*"
+
+umask 000
+
+$JAVA_HOME/bin/java org.jlab.coda.afecs.influx.InfluxInjector

@@ -1,0 +1,11 @@
+name                  = ROC1
+type                  = ROC
+priority              = 1210
+code                  = {/home/moffit/coda/3.10_arm/examples/rol/test_list_v3.so undefined} 
+isMaster              = true
+output                = EmuSocket
+emuName               = PEB1
+emuPort               = 46100
+emuNet                = undefined
+emuMaxBufferSize      = 1000000
+emuTimeOut            = 5

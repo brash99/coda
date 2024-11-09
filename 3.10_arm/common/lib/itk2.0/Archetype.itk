@@ -1,0 +1,113 @@
+#
+# itk::Archetype
+# ----------------------------------------------------------------------
+# Base class for all widgets in the [incr Tk] Toolkit.  Provides
+# facilities to merge widget options into a composite list of options
+# for the overall widget.  Derived classes add widgets and methods to
+# specialize behavior.
+#
+#   METHODS:
+#     configure
+#     configure -option
+#     configure -option value ?-option value?...
+#        Used to set/query configuration options
+#
+#     component
+#     component <name> <command> ?<arg> <arg>...?
+#        Invokes the given <command> as a method on the component
+#        called <name>.
+#
+#     itk_component add <name> <create-cmd> <option-cmds>
+#        Creates a component widget and merges its options into
+#        the composite option list for the overall widget
+#
+#     itk_component delete <name> ?<name>...?
+#        Destroys a component widget and removes its options from
+#        the composite option list
+#
+#     itk_option add <name> ?<name>...?
+#        Adds the option <name> belonging to a class or component
+#        widget into the option list.  Options can be added even
+#        if they were not originally kept when the component was
+#        created.
+#
+#     itk_option remove <name> ?<name>...?
+#        Removes the option <name> belonging to a class or component
+#        widget from the option list.  This allows a derived class
+#        to turn off or redefine undesirable options inherited from
+#        a base class.
+#
+#   WIDGET ATTRIBUTES:
+#     none
+#
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan       Phone: (610)712-2842
+#            AT&T Bell Laboratories   E-mail: michael.mclennan@att.com
+#
+#      RCS:  $Id: Archetype.itk,v 1.1.1.1 1996/08/21 19:25:46 heyes Exp $
+# ----------------------------------------------------------------------
+#                 Copyright (c) 1994  AT&T Bell Laboratories
+# ======================================================================
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright notice appear in all copies and that
+# both that the copyright notice and warranty disclaimer appear in
+# supporting documentation, and that the names of AT&T Bell Laboratories
+# any of their entities not be used in advertising or publicity
+# pertaining to distribution of the software without specific, written
+# prior permission.
+#
+# AT&T disclaims all warranties with regard to this software, including
+# all implied warranties of merchantability and fitness.  In no event
+# shall AT&T be liable for any special, indirect or consequential
+# damages or any damages whatsoever resulting from loss of use, data or
+# profits, whether in an action of contract, negligence or other
+# tortuous action, arising out of or in connection with the use or
+# performance of this software.
+# ======================================================================
+
+class itk::Archetype {
+
+    constructor {args} {
+        _initOptionInfo
+        eval itk_initialize $args
+    }
+
+    destructor {
+        _deleteOptionInfo
+    }
+
+    method cget {option} @Archetype-cget
+    method configure {{option ""} args} \
+        @Archetype-configure
+    method config {{option ""} args} {
+        eval configure $option $args
+    }
+
+    method component {{name ""} args} \
+        @Archetype-component
+
+    protected method itk_component {option args} \
+        @Archetype-itk_component
+
+    protected method itk_option {option args} \
+        @Archetype-itk_option
+
+    protected method itk_initialize {args} \
+        @Archetype-itk_initialize
+
+    protected variable itk_option
+    protected variable itk_component
+    protected variable itk_interior ""
+
+    # ------------------------------------------------------------------
+    #  Options common to all widgets
+    # ------------------------------------------------------------------
+    itk_option define -clientdata clientData ClientData ""
+
+    # ------------------------------------------------------------------
+    #  Private methods needed for option management
+    # ------------------------------------------------------------------
+    private method _initOptionInfo {} @Archetype-init
+    private method _deleteOptionInfo {} @Archetype-delete
+}

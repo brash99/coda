@@ -1,0 +1,12 @@
+<rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:cool="http://AFECSHOMEDB/schema/cool#"
+>
+
+<rdf:Description rdf:about="http://COOLHOME/Control/testconfig/Options/ROC1_option#ROC1_option">
+
+   <cool:hasName>ROC1_option</cool:hasName>
+   <cool:hasConfigFile>ROC1.dat</cool:hasConfigFile>
+
+</rdf:Description>
+</rdf:RDF>

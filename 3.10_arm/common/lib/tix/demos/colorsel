@@ -1,0 +1,56 @@
+#!/usr/local/bin/tgsh
+#
+# This demo program needs to run with the TGSH program: Tixwish + GL widgets
+#
+
+set btn {}
+
+proc MakeInterface {} {
+    global btn 
+
+    tixColorEdit .c -bd 1 -relief raised -adjustsize 1 -command Color
+    pack .c -expand yes -fill both
+
+    toplevel .t
+    foreach b {a b c d e f g h} {
+	set btn .t.$b
+	button $btn -text "    Test    " -bd 3 -highlightthickness 0
+	pack $btn -side top -anchor c
+
+	bind $btn <1> "Select %W"
+    }
+
+    set btn $btn
+    wm geometry . +100+100
+    wm geometry .t +400+100
+}
+
+proc convt {x} {
+    set x [expr $x*255]
+    set x [lindex [split $x .] 0]
+    set x [format %02x $x]
+
+    return $x
+}
+
+proc Color {r g b} {
+    global btn
+
+    if {$btn != {}} {
+	set rr [convt $r]
+	set gg [convt $g]
+	set bb [convt $b]
+
+	$btn config -bg #$rr$gg$bb
+    }
+}
+
+
+proc Select {w} {
+    global btn
+
+    set btn $w
+}
+
+MakeInterface
+

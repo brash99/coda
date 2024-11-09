@@ -1,0 +1,22 @@
+#!/bin/csh -f
+
+# Script to start up a CODA EMU Data Concentrator
+# First argument is the name of the component
+
+if ($#argv < 1) then
+  echo "Usage: coda_emu_dc <emu_name>"
+  exit
+endif
+
+#setenv PATH $CODA/$MACHINE/bin
+#setenv LD_LIBRARY_PATH $CODA/$MACHINE/lib
+
+# For code profiling tools:
+#$JAVA_HOME/bin/java -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -cp $CODA/common/jar/\* \
+
+$JAVA_HOME/bin/java -cp $CODA/common/jar/\* \
+    -Djava.net.preferIPv4Stack=true \
+    -Djava.library.path=$CODA/$MACHINE/lib \
+    -DcmsgUDL="rc://multicast/"$EXPID \
+    -Dname=$1 \
+    -Dtype=DC org.jlab.coda.emu.EmuFactory

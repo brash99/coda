@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<component name="testconfig">
+
+   <transports>
+
+   </transports>
+
+   <modules>
+
+     <EbModule class="EventBuilding" id="0" threads="1" timeStats="off" runData="false" tsCheck="true" tsSlop="2" sparsify="false"> 
+
+     </EbModule>
+
+   </modules>
+
+</component>
+

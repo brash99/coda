@@ -1,0 +1,123 @@
+#!/usr/local/coda/2.5/SunOS/bin/tixwish -f
+
+# notepad --
+#
+#       This is a Tix demo program. "notepad" look like the MS Windows
+#	NOTEPAD.EXE program. You can use it to open and edit text
+#	files. The "save" menu commands have been disabled
+#
+#	You can either execute it directly
+#
+#               % notepad
+# 
+#       if you have set up Tix properly. Otherwise try the following
+#
+#               % setenv TIX_LIBRARY ../library
+#               % tixwish -f notepad
+#
+
+proc MakeMenu {w} {
+    set f [frame $w.menu -bd 2 -relief raised]
+    pack $f -side top -fill x
+
+    # File menu
+    #
+    set mb [menubutton $f.file -text File -under 0]
+    set m  [menu $mb.m]
+    $mb config -menu $m
+    tixForm $mb -left 0
+
+    $m add command -label "Open ..." -under 0 -command "OpenFile $w" \
+	-accelerator "Ctrl+O"
+    $m add command -label "Save ..." -under 0 -command "OpenFile $w"\
+	-accelerator "Ctrl+S" -state disabled
+    $m add command -label "Save As ..." -under 5 -command "OpenFile $w"\
+	 -state disabled
+    # Edit menu
+    #
+    set lastMb $mb
+    set mb [menubutton $f.edit -text Edit -under 0]
+    set m  [menu $mb.m]
+    $mb config -menu $m
+    tixForm $mb -left $lastMb
+
+    # Window menu
+    #
+    set lastMb $mb
+    set mb [menubutton $f.window -text Window -under 0]
+    set m  [menu $mb.m]
+    $mb config -menu $m
+    tixForm $mb -left $lastMb
+
+    # Help menu
+    #
+    set mb [menubutton $f.help -text Help -under 0]
+    set m  [menu $mb.m]
+    $mb config -menu $m
+    tixForm $mb -right -0
+}
+
+proc MakeBuffer {w} {
+    global buffers
+
+    set t [tixScrolledText $w.text]
+    $t subwidget text config -highlightcolor [$t cget -bg] -bd 2 \
+	-bg [$t cget -bg] 
+    pack $t -side top -fill both -expand yes
+
+
+    set buffers($w,text) [$t subwidget text]
+}
+
+proc OpenFile {w} {
+    global buffers
+
+    set filedlg [tix filedialog tixExFileSelectDialog]
+
+    $filedlg subwidget fsbox config -command "OpenFileCmd $w" -filetypes {
+	{{*}	  {*      -- All files}}
+	{{*.txt}  {*.txt  -- Text files}}
+	{{*.html} {*.html -- HTML documents}}
+	{{*.doc}  {*.doc  -- MS Word documents}}
+	{{*.c}	  {*.c    -- C source files}}
+    }
+    $filedlg popup $w
+}
+
+proc OpenFileCmd {w filename} {
+    global buffers
+
+    if {$filename == {}} {
+	return
+    }
+    set text $buffers($w,text)
+
+    catch {
+	set fd [open $filename {RDONLY}]
+	$text delete 1.0 end
+
+	while {![eof $fd]} {
+	    $text insert end [gets $fd]\n
+	}
+	close $fd
+    }
+    wm title $w $filename
+}
+
+proc NewBuffer {} {
+    set w .window1
+
+    toplevel $w
+    MakeMenu $w
+    MakeBuffer $w
+    wm protocol $w WM_DELETE_WINDOW exit
+
+}
+
+proc MakeInterface {} {
+    wm withdraw .
+    NewBuffer
+}
+
+
+MakeInterface

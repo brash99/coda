@@ -1,0 +1,7 @@
+<control>
+   <session>
+      <name>testsession</name>
+      <config>testconfig</config>
+      <runnumber>1</runnumber>
+   </session>
+</control>

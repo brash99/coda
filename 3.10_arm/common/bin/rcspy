@@ -1,0 +1,10 @@
+#!/bin/csh -f
+
+# Run Control spy
+# author: gurjyan, 30-jul-2014
+
+# Usage: rcspy -s <session> -r <runType> -e <expid> (optional)
+#
+
+# start rcspy
+$JAVA_HOME/bin/java -cp "$CODA/common/jar/*:$CODA/common/jar/jena/*" org.jlab.coda.afecs.usr.runControlSpy.RcSpy $1 $2 $3 $4 $5 $6

@@ -1,0 +1,22 @@
+#!/bin/csh -f
+
+#Afecs platform command line manipulation program
+# author: gurjyan, 26-mar-2014
+
+# Usage: plask (-h|--host) <host> (-n|--name) <expid> [(-i|--interactive)[:<interactive>]]
+#
+#  (-h|--host) <host>
+#        Afecs platfrom host
+#
+#  (-n|--name) <expid>
+#        Afecs platfrom name
+#
+#  [(-i|--interactive)[:<interactive>]]
+#        Afecs command line interactive mode
+
+
+# start plask
+$JAVA_HOME/bin/java -cp "$CODA/common/jar/*:$CODA/common/jar/jena/*" org.jlab.coda.afecs.usr.rcapi.PLAsk $1 $2 $3 $4 $5 $6 $7 $8 $9
+
+
+#memory settings  and jConsole -Xms200m -Xmx500m -Dcom.sun.management.jmxremote

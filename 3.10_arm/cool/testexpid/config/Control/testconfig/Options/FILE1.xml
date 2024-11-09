@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<component name="FILE1">
+
+   <transports>
+
+     <server name="FILE1_transport" class="File" />
+
+   </transports>
+
+   <modules>
+
+     <EbModule class="EventBuilding" id="1" threads="1" timeStats="off" runData="false" tsCheck="true" tsSlop="2" sparsify="false"> 
+
+         <inchannel id="1" name="PEB1" transp="FILE1_transport" fileName="/home/moffit/coda/data/testconfig_%d.evio.%d" split="20000000000" />
+
+     </EbModule>
+
+   </modules>
+
+</component>
+

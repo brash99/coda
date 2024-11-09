@@ -1,0 +1,13 @@
+#!/bin/csh -f
+
+# Starts JCedit interface
+# author: vhg 30-Aug-2013
+
+setenv CLASSPATH "$CODA/common/jar/*:$CODA/common/jar/jena/*"
+
+#$JAVA_HOME/bin/java -Xms200m -Xmx500m -Dsun.java2d.pmoffscreen=false -Dorg.xml.sax.parser="com.sun.org.apache.xerces.internal.parsers.SAXParser" \
+#-Djavax.xml.parsers.DocumentBuilderFactory="com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl" \
+#-Djavax.xml.parsers.SAXParserFactory="com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl" \
+#org.jlab.coda.cedit.cooldesktop.CDesktop
+
+$JAVA_HOME/bin/java -Xms200m -Xmx500m -Dcom.sun.management.jmxremote org.jlab.coda.cedit.cooldesktop.CDesktop

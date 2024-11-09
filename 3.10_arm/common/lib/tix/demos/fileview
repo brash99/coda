@@ -1,0 +1,21 @@
+#!/bin/sh
+# the next line restarts using tixwish \
+exec tixwish "$0" "$@"
+
+puts "This demo does nothing"
+exit
+
+proc fvStart {w} {
+    if [winfo exists $w] {
+	destroy $w
+    }
+    toplevel $w
+    wm title $w "File Viewer"
+    wm protocol $w WM_DELETE_WINDOW "exit"
+
+    tixDirTree $w.t
+}
+
+
+wm withdraw .
+fvStart .fileview

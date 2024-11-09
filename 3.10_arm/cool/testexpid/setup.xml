@@ -1,0 +1,22 @@
+<afecs>
+    <!--...................................................-->
+    <!--..     COOL_HOME                                ..-->
+    <!--..     EXPID                                     ..-->
+    <!--..N.B. Above environmental variables must be set ..-->
+    <!--...................................................-->
+
+    <!--...................................................-->
+    <!--..     Platform settings                         ..-->
+    <!--...................................................-->
+    <description>Afecs Platform</description>
+    <platformHost>localhost</platformHost>
+    <!--<tcpPort>45000</tcpPort>-->
+    <!--<udpPort>45000</udpPort>-->
+
+    <!--...................................................-->
+    <!--..     RC domain settings                        ..-->
+    <!--...................................................-->
+    <!--<rcUdpPort>45200</rcUdpPort>-->
+    <rcDescription>Afecs Platform RC Domain</rcDescription>
+
+</afecs>

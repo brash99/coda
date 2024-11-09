@@ -1,0 +1,14 @@
+#!/bin/csh -f
+
+#Starts Afecs container
+# author: vhg, 29-aug-2013
+
+# set classpath
+setenv CLASSPATH "$CODA/common/jar/*:$CODA/common/jar/jena/*"
+
+umask 000
+
+# start the container
+#$JAVA_HOME/bin/java -Xms200m -Xmx500m -Dcom.sun.management.jmxremote  org.jlab.coda.afecs.container.AContainer -NOmulticast
+$JAVA_HOME/bin/java -Xms200m -Xmx500m -Djava.net.preferIPv4Stack=true org.jlab.coda.afecs.container.AContainer -NOmulticast
+
