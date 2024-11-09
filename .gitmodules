@@ -1,0 +1,18 @@
+[submodule "3.10_arm/linuxvme/ti"]
+	path = 3.10_arm/linuxvme/ti
+	url = git@github.com:brash99/ti.git
+[submodule "3.10_arm/linuxvme/tir"]
+	path = 3.10_arm/linuxvme/tir
+	url = git@github.com:brash99/tir.git
+[submodule "3.10_arm/linuxvme/v775"]
+	path = 3.10_arm/linuxvme/v775
+	url = git@github.com:brash99/v775.git
+[submodule "3.10_arm/linuxvme/v792"]
+	path = 3.10_arm/linuxvme/v792
+	url = git@github.com:brash99/v792.git
+[submodule "3.10_arm/linuxvme/v792_v775"]
+	path = 3.10_arm/linuxvme/v792_v775
+	url = git@github.com:brash99/v792_v775.git
+[submodule "coda_scripts"]
+	path = coda_scripts
+	url = git@github.com:brash99/coda_scripts

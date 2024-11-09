@@ -1,2 +1,8 @@
 jdk1.8.0_152/*
 data/*
+coda_scripts/*
+3.10_arm/linuxvme/ti/*
+3.10_arm/linuxvme/tir/*
+3.10_arm/linuxvme/v792/*
+3.10_arm/linuxvme/v775/*
+3.10_arm/linuxvme/v792_v775/*
