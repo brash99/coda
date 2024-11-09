@@ -1,0 +1,11 @@
+name                  = ROC1
+type                  = ROC
+priority              = 1210
+code                  = {/home/coda/coda/3.10_arm/linuxvme/tir/rol/vme_list.so undefined} 
+isMaster              = true
+output                = EmuSocket
+emuName               = PEB1
+emuPort               = 46100
+emuNet                = undefined
+emuMaxBufferSize      = 1000000
+emuTimeOut            = 5

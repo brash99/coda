@@ -1,0 +1,14 @@
+<registration>
+   <client>
+      <name>PEB1</name>
+      <hostname>192.168.0.1</hostname>
+      <containerhost>jlabcoda.cnuadmin.cnu.edu</containerhost>
+      <portnumber>45700</portnumber>
+   </client>
+   <client>
+      <name>ROC1</name>
+      <hostname>jlabvme.cnuadmin.cnu.edu</hostname>
+      <containerhost>jlabcoda.cnuadmin.cnu.edu</containerhost>
+      <portnumber>45700</portnumber>
+   </client>
+</registration>

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<component name="ROC1">
+
+   <transports>
+
+     <server name="PEB1_transport" class="Emu" />
+
+   </transports>
+
+   <modules>
+
+     <RocModule class="RocSimulation" id="1" timeStats="off" > 
+
+         <outchannel id="1" name="PEB1" transp="PEB1_transport" timeout="5" port="46100" maxBuf="1000000" sockets="1" />
+
+     </RocModule>
+
+   </modules>
+
+</component>
+

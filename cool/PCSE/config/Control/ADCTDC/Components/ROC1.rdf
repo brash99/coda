@@ -1,0 +1,31 @@
+<rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:cool="http://AFECSHOMEDB/schema/cool#"
+>
+
+<rdf:Description rdf:about="http://COOLHOME/Control/ADCTDC/Components/ROC1#ROC1">
+
+   <cool:hasName>ROC1</cool:hasName>
+   <cool:hasID>1</cool:hasID>
+   <cool:hasType>ROC</cool:hasType>
+   <cool:hasCode>{/home/coda/coda/3.10_arm/linuxvme/tir/rol/vme_list.so undefined} </cool:hasCode>
+   <cool:hasPriority>1210</cool:hasPriority>
+   <cool:isCodaComponent>true</cool:isCodaComponent>
+
+   <cool:include rdf:resource="http://COOLHOME/Control/ADCTDC/Options/ROC1_option.rdf"/>
+   <cool:hasOption rdf:resource="http://COOLHOME/Control/ADCTDC/Options/ROC1_option#ROC1_option"/>
+
+
+
+   <cool:include rdf:resource="http://COOLHOME/Control/ADCTDC/Links/ROC1_PEB1.rdf"/>
+   <cool:usesLink rdf:resource="http://COOLHOME/Control/ADCTDC/Links/ROC1_PEB1#ROC1_PEB1"/>
+
+
+
+   <cool:XCo>158.0</cool:XCo>
+   <cool:YCo>205.0</cool:YCo>
+   <cool:WCo>80.0</cool:WCo>
+   <cool:HCo>80.0</cool:HCo>
+
+</rdf:Description>
+</rdf:RDF>

@@ -1,0 +1,19 @@
+<rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:cool="http://AFECSHOMEDB/schema/cool#"
+>
+
+<rdf:Description rdf:about="http://COOLHOME/Control/ADCTDC/Links/ROC1_PEB1#ROC1_PEB1">
+
+   <cool:hasName>ROC1_PEB1</cool:hasName>
+   <cool:hasDescription>Missing</cool:hasDescription>
+   <cool:sourceComponentName>ROC1</cool:sourceComponentName>
+   <cool:destinationComponentName>PEB1</cool:destinationComponentName>
+
+   <cool:startX>238.0</cool:startX>
+   <cool:startY>245.0</cool:startY>
+   <cool:endX>402.0</cool:endX>
+   <cool:endY>256.0</cool:endY>
+
+</rdf:Description>
+</rdf:RDF>

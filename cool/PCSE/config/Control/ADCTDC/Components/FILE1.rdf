@@ -1,0 +1,33 @@
+<rdf:RDF
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:cool="http://AFECSHOMEDB/schema/cool#"
+>
+
+<rdf:Description rdf:about="http://COOLHOME/Control/ADCTDC/Components/FILE1#FILE1">
+
+   <cool:hasName>FILE1</cool:hasName>
+   <cool:hasID>1</cool:hasID>
+   <cool:hasType>FILE</cool:hasType>
+   <cool:hasCode>{undefined undefined} </cool:hasCode>
+   <cool:hasPriority>1510</cool:hasPriority>
+   <cool:isCodaComponent>true</cool:isCodaComponent>
+   <cool:linkedTo>PEB1</cool:linkedTo>
+   <cool:linkedToType>PEB</cool:linkedToType>
+
+   <cool:include rdf:resource="http://COOLHOME/Control/ADCTDC/Options/FILE1_option.rdf"/>
+   <cool:hasOption rdf:resource="http://COOLHOME/Control/ADCTDC/Options/FILE1_option#FILE1_option"/>
+
+
+
+   <cool:include rdf:resource="http://COOLHOME/Control/ADCTDC/Links/PEB1_FILE1.rdf"/>
+   <cool:usesLink rdf:resource="http://COOLHOME/Control/ADCTDC/Links/PEB1_FILE1#PEB1_FILE1"/>
+
+
+
+   <cool:XCo>601.0</cool:XCo>
+   <cool:YCo>179.0</cool:YCo>
+   <cool:WCo>80.0</cool:WCo>
+   <cool:HCo>80.0</cool:HCo>
+
+</rdf:Description>
+</rdf:RDF>
