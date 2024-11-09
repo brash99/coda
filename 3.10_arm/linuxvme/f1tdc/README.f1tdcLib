@@ -1,0 +1,96 @@
+/* Library and Example code for use of the Jefferson Lab
+   VME Based F1 TDC Module
+
+   Requires: F1TDC
+             vxWorks 5.4 or later
+             universeDma Library
+
+
+   f1tdcLib.c f1tdcLib.h  : Library
+   f1tdc_list.crl         : Readout list for 1 TDC
+   roc1_f1tdc.boot        : Boot script for ROC
+
+
+Basics:
+
+  f1Init(addr,addr_inc,num,flag)
+
+    addr: A24 VME address set by switches on the F1 TDC
+
+    addr_inc: With multiple boards this is the value
+              that the A24 address is incremented between
+              base addresses of each board
+
+    num: Number of F1TDCs to initialize
+
+    flag: 16 bit integer
+           Low 4 bits - Specifies the default Configuration
+                        to load into the F1 chip
+                   0 Hi Rez      - Synchronous 
+                   1 Hi Rez      - Non-Synchronous (Start reqd)
+                   2 Normal Rez  - Synchronous
+                   3 Normal Rez  - Non-Synchonous (Start reqd)
+		   4 User Specified from a file
+                   5-7 Reserved
+		   8 Hi Rez Syncronous (Backplane Distribution)
+                   9 Hi Rez NonSync    (Backplane Distribution)
+                  10 Normal S                "        "
+                  11 Normal NS               "        "
+                  12 User file               "        "
+                  13-15 Reserved
+
+           High 12bits - A16 Base address of F1 signal dist
+                         module (if available). This board
+                         can control up to 5 F1 Boards.
+
+
+Examples:  
+
+     Initialize a single F1TDC at address 0xed0000. High
+  resolution Syncronous mode:
+        f1Init(0xed0000,0,0,0)
+
+---------------------------------------------
+     Initialize 5 F1 boards at   0xee0000
+                                 0xee1000
+                                 0xee2000
+                                 0xee3000
+                                 0xee4000
+                 F1 SDC Board at 0xed00
+     Normal Resolution - Syncronous Mode:
+
+       f1Init(0xee0000,0x1000,5,0xed02)
+
+---------------------------------------------
+  To Read F1 Chip configuration data from a file and
+program all 8 chips on the board in slot 10
+
+   f1ConfigReadFile("/site/coda/2.5/extensions/cfg_high.dat")
+
+   f1SetConfig(10,4,0xff)
+
+  If you whish to program all TDCs in the crate with the new
+configuration then execute the f1ConfigReadFile() prior to
+running f1Init(). Then when running init choose iflag = 4 (or 12 when
+using a BDC)
+
+e.g. (Init 8 f1tdc boards with Config data from my_config.dat.)
+
+   -> f1ConfigReadFile("my_config.dat")
+   ...
+   -> f1Init(0xed0000,0x1000,8,0xc)
+   
+---------------------------------------------
+  To create a new downloadable configuration file run
+
+  "config_make" on your unix machine (source: cfg_file_make.c)
+
+  Tp display and existing file run
+  "config_show" on your unix machine (source: cfg_file_display.c)
+---------------------------------------------
+
+   
+
+
+   Questions:
+      David Abbott  x7190

@@ -1,0 +1,86 @@
+Using VETROC PCB, implement it as Flash TDC
+
+The input signals are measured by the 500MHz coarse counter, and precision carry chain delays.
+Each channel is implemented using 32 cells ==> 128 taps in the carry chain.  The total delay 
+of the 32-cells is a little over 2ns, which gives a natural calibration of the carry chain 
+absolute delay (an edge will be measured in consecutive clock cycles).  
+Limitation of the firmware: one edge (either rising or falling) in one clock cycle (2ns).
+
+The TDC is saved in the ring buffer, which is about 4us right now.  Upon trigger, the ring 
+buffer data is stored in the secondary buffer to be readout.  There should be no dead time
+if the time between triggers are longer than the readout window width (no event overlap).
+
+V1.1, July 15, 2014: two chanels are implemented, one chanel per register for readout.
+v1.2, July 16, 2014: implement the calibration signals, a simple mux with the real signal.
+    The ring buffer (decrease width) and the channel buffer (decrease depth) are changed to 18KB Block RAM. 
+V1.3, July 16, 2014: Implement eight channels with a common readout.  Add another 24 channels, and readout 
+    through four registers, looping around.  July 18, 2014: Combine the 32-channels into one single FIFO.
+	 32-->4-->1. The data is readout properly.
+	 Add five more connectors, so the total channels are 192.  Have to compile on Linux-64 
+V1.4, July 21, 2014: Add the event (block) formation, readout through VME, not successful
+V1.5, July 28, 2014: try to read out through VME.  Decrease to 128 channel, 4K deep buffers.  
+    Fix the problem with the evtFinish signal problem in tdcBoard (should be local) for six connector combination.
+V1.6, July 29, 2014: Fully scope monitoring, VME A32 readout works.  Compiled for 128 channels.
+    July 30, 2014: use VMEreset(5) as the generic reset (syncReset), and VMEreset(4) as ResetDefault
+V1.7, July 30, 2014: 192 channel compile.
+V1.8, July 31, 2014: fix the problem with single cahnnel readout (order), 192 channel compile
+V2.1, Aug. 1, 2014: Revert the TDC bits(6:0) in Merge2Data.vhd
+V2.2, Aug. 15, 2014: Sync the Calibration trigger with Clk625 then to the DlyInc 
+V2.3, Sept. 4, 2014: try to put in RLOC for Carry Chain, LOC area for each connector inputs with looser BLOCKRAM
+V2.4, Sept. 9, 2014: Set ClkVme, extCalib as another two channel-input, used to calibrate the board
+V2.5, Sept. 11, 2014: use GENIN(8:3) as six Ext. Calib inputs.  No use, as the Calib logic can only choose one at a time anyway.
+    output the divided ClkVme to GENOUT(8:1), so that these can be feed back as normal input pulse (for calibration).
+V3.1, Mar. 30, 2015: re-visit the design after six months sitting idle
+V3.2, May 26, 2015: change the Locate, so that any carry chains will be limited to a single clock region.
+    Change the input mux, so the Calibration is common to all. (only one Calib signal to 32 channels)
+V3.3, June 2, 2015: Fix the problem with IN_A and IN_C loc clock region location.
+V3.4, June 3, 2015: use V3.3 as guide file, recompile
+
+The common files are put in vfTDC area, while the vfTDC192 keeps the part the specific to 192 inputs design.
+V1.1, June 4, 2015: first implementation, usercode: 0xF7DC3011 (128 version: F7DC1vvr; 144 version: F7DC2vvr)
+V1.2, June 9, 2015: Use CarryDelay132, and the V1.1 as guide file
+V1.3, June 9, 2015: remove the smartguide file, compile
+V1.4, June 9, 2015: update the TDCEncode132 with the possible glitch scenerio, aborted because the routing took too long.
+      June 12, 2015: Reduce the precision to every slice (LSB is about 70 ps)
+V1.5, June 12, 2015: ucf limits the connectorC to clock region X0Y0 (mostly).
+V1.6, June 15, 2015: use the common ucf file
+V1.7, June 15, 2015: Multi-routing, do not seem to work.  It is the same as single routing
+V1.8, June 16, 2015: Updated UCF file,
+V1.9, June 17, 2015: Invert P0Trg1 and P0Reset, use new ucf file, re-shaffle the inputs, it is impossible to compile with SmartGuide.
+      June 18, 2015: undo the constraint file (vfTDC_noShaffle.ucf) and disable the SmartGuide. Constrain the buff and Carrychain together
+		June 18, 2015: use the logical 8 channels blocks.
+V2.1, June 19, 2015: do not combine the 8 logical channels
+V2.2, June 22, 2015: Load with TDCch4, not TDCch8 for Connector32 design
+V2.3, June 25, 2015: Use the TDCEncode132_med (based on vfTDC96 v2.4)
+V2.4, June 25, 2015: disable the bit inversion in Merge8Data
+V2.5, July 13, 2015: Copied from Linux, it should be the same as V2.4
+V3.1, July 15, 2015: Add the reference channel.
+V3.2, July 20, 2015: implement the slower internal calibration, shorter intermediate carry chain for second measurement.
+V3.3, July 20, 2015: Expand the Trigger readout window to 16 bit (from 8 bit).  Use V3.2 as guide file
+V3.4, July 24, 2015: Always enable the Reference channels in Claibration mode.
+V4.1, Oct. 29, 2015: new data format, try to follow the standard JLAB module definition
+      Oct. 30, 2015: Re-compile the FPGA with updated data format
+		Nov. 2, 2015: Fix the bugs in new data format logic.
+      tV4.2, Nov. 4, 2015: Added the VME Serial logic (I2C only right now)
+      tV4.3, Nov. 6, 2015: Changed the filler word to 0x1F (11111). Added the event overlap (Time between triggers is less than window size).
+      tV4.4, Nov. 9, 2015: Further tuning on ChanFIFO, in line with vfTDC96D design and revisioning.
+      tV4.5, Nov. 10, 2015: Add the ChanFIFO write protection.  When Almost_full, write the EndMarker only. Add more scalers
+      Nov. 11, 2015: Back to V4.1, and use register 0x5C, bit(31:24) for version number, bit(23:20) for revision number.
+V4.2, Nov. 12, 2015: Read out the Clock source setting, and change 0x2C register, so that each output can be set individually.
+V5.1, Sept. 12, 2016: Use one HOT encoding for TDC encoding, neither the case, nor the if statement works (too much resource/long runtime)
+V5.2, Sept. 13, 2016: Pin assignment using the Rev2 VETROC boards.
+V5.3, Sept. 14, 2016: Carry chain lock to the proper clock region
+V5.4, Oct. 3, 2016: Locate the VmeA(0) to T8, the same pin as the LONGWD_N
+V5.5, Oct. 4, 2016: Move the REdge/FEdge one clock earlier in TDCEncode132_OR_2clk
+V5.6, Oct. 5, 2016: from V5.4, add one clock delay on EncodedData in TDCEncode132_OR_3clk
+V5.7, Oct. 7, 2016: Add 16 output on the VME P2 connector (~5MHz)
+V6.1, Nov. 7, 2016: Change the Case statement to IF statement in Merge7, Merge4 and Merge8 modules.
+V6.2, Nov. 7, 2016: Remove the last elsif statement in Mege7, merge4 and Merge8 modules.
+V6.3, Nov. 7, 2016: Change Merge7 and Merge8 back to CASE statement
+V6.4, Nov. 8, 2016: Change Merge4 back to CASE statement, and added the RstDly250 in CalibCommon.
+V7.1, Oct. 11, 2017: update the 0x5C register to reflect the firmware version.  bit31:30: type, bit29-24: version bit23-20: revision.
+V7.2, Oct. 18, 2017: Add the OR logic for trigger output, location lock of the carry chain delays (and the extra for ref channels),
+      Correct the polarity of GenIn(5:8).  Leaving the ConnectorInput and ReferenceInput as inverted (by the receivers on PCB).
+      Oct. 20, 2017: LookBack(15:14) to DISABLE(1) Falling/Rising Edge TDC; Remove Clk250In_N from ucf; bypass carry68 for ref channels.
+
+Make sure to update 0x5C register for firmware Type/Version/Revision

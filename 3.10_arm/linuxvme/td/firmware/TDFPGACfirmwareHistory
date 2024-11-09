@@ -1,0 +1,81 @@
+
+TDFPGA compile history:
+
+v1.1 Sept. 27, 2012: Copied from TIDFPGA, first compile for TD only.  Removed the MGT, 
+	TS function (trigger generation), 
+V1.6 Nov. 6, 2012: 4ns timing counter, P2Trg to initiate data generation, data readout
+	used for TD production test
+v2.1, Jan. 24, 2013: register offset 0x04 default to high, so the optic 
+	transceivers are powered up as default, and during FPGA reload (pullup);
+V2.2, Feb. 28, 2013: compiled in Xilinx ISE14.4
+V3.2, May 15, 2013: Updates the UpDown counters (copied from TIFPGA), so it will not down
+	count if it is 0.  Updates the Sync phase alignment (copied from TIFPGA),
+	Added the decoding of SyncResetRequest (copied from TIFPGA).  It use VXS P0 DP30 as output.
+V3.3, May 23, 2013: Add the connected fiber detections Reg offset 0x04, bits(31:16);
+	Disable the TI busy if that TI has requested SyncReset.
+V4.1, June 21, 2013: decode the trigger2 with subTS encoding
+V5.1, July 29, 2013: use A24 offset 0x100 bit24 to latch the BusyTimer and LiverTimer.
+V6.1, Sept. 12, 2013: use A24 offset 0x04 to readout the connected TI status.  (V3.3)
+	Bit(23:16): TI powered up, and fiber connected; Bit(31:24): TI trigger enabled
+V7.1, Oct. 16, 2013: Change the status decoding, and add the sync code 0xaa (TI ready detection)
+	Not backward compatible.  Compatible with TI V15 and later, TS V8 and later.
+V8.1, Nov. 27, 2013: Modify the status decoding to match with TI version 17.1
+	Add the TI info to A24 registers (offset) 0xD0, 0xD4,..., 0xF0.  Move the original 0xD0 to 0x90
+V9.1, Feb. 26, 2014: Add the protection, so that when the TI is removed (software), the TD will not
+	mis-identify the TI as ready.
+V10.1, Mar. 20, 2014: added the block level acknowledgement from TI.
+V10.2, Mar. 24, 2014: fixed a bug in block level readback.  Only fiber#1 was correct.  Fiber#2-7 
+	were set to the CrateID.  The corresponding TI firmware is V19.3 (affects TImaster only).
+V11.1, Sept. 19, 2014: Adjust the front panel ECL output to be similar as that of TI:
+   #1: BUSY, #2: Trigger, #3, 4, 5, 6: A24 offset 0x4c, bit0-3 controlled, #7: reserved, #8: trigger from TS
+V11.2, Sept. 23, 2014: Remove the Clk register after the Block counter, and the register after the event, and
+   use OFD for the TrgBusy output to SD/TS.  This should decrease the delay and get a consistent timing on TrgBusy.
+	Use FDCE for TD trigger input.
+V12.1, Oct. 1, 2014: Do the trigger_block counting at 250 MHz clock.
+V13.1. Dec. 22, 2014: Add the trigger acknowledge busy enable.  (v12.1 was redone, back to 62.5MHz clock)
+       Dec. 23, 2014: set these back to the Clk250 (Trigger Received, Block Received, Block Acknowledged).
+V13.2, Jan. 5, 2015: use register offset 0x28 bit 22 to monitor the trigger loss.
+V13.3, Jan. 13, 2015: fixed the long time bug that the block level could not be set to an odd number other than 1.
+V13.4, Jan. 14, 2015: fixed a bug in Block difference counter.  It should downcount on BlkRcvd, not BlkAckd.
+   Use register offset 0x2c bit 31:16 to read the TI busy status
+V14.1, Jan. 15, 2015: copy the SYNC decoding from ModTI.  To be consistant with ModTI
+V14.2, Jan. 15, 2015: Add the register offset 0x98, number of triggers received on TD.
+V14.3, Jan. 16, 2015: Add the extra acknowledge from HFBR check (switch to 100, testpt 3 and 2)
+V15.1, Feb. 20, 2015: Use the common sch/VHDL/IPcore design as the TI, TD, TS and TIpcie
+V15.2, Feb. 20, 2015: fix the SYNC connection.  SyncSrcEn(0) selects the VXS P0 input, (or else, the TD generation).
+   TD trigger source selection: MasterMode (0x2c register set to b"11"), select the decoded trigger.
+V15.3, Feb. 23, 2015: Fix the Fiber status detect etc. RxError control
+V15.4, Mar. 23, 2015: after MODTIC, TSFPGAC test, recompile for common module compatibility;
+   Fixed the PulseTrig signal (too wide), change the front panel BUSY out to the BUSY going to TS
+
+
+V1.1, Mar. 26, 2015: FPGA usercode 0x7D013011, as production TD FPGA design
+V1.2, Apr. 10, 2015: Update the periodic trigger to 0.5 Hz, Add front panel trigger input delay adjustment
+V1.3, Apr. 13, 2015: Update the Trigger2--> Trigger1 auto generation logic.  Using 0x3c bit(24:16) to set the latency.
+V1.4, Apr. 16, 2015: update the Automatic SyncReset.  
+V1.7, May 26, 2015: Clk625 for SYNC generation; Trigger Rule expansion, Added the BUSY counters, 
+V2.1, Oct. 14, 2015: Incorporate in all the changes from TI, Use common GTP module, and MgtpReset
+V3.1, Feb. 17, 2016: Incorporate the Changes in TI, and implement the I2C for optic transceivers.
+   Use the I2C_busy to delay the I2C read, Set SYSMON Alarm temperature to 45C-42C.
+      Feb. 18, 2016: Use the DRdy to validate the SysMon Readout; Enable DEN on SysMon DRP Write.
+      Feb. 19, 2016: Use VmeBusy to enable the PData (from PrePData).
+		Feb. 22, 2016: Set a timer, so that the SysMon readout would not possibly stuck in not ready.
+V4.1, Apr. 7, 2016: Use front panel OT#1 for SyncRstRequst output, to wire to TS Generic Inputs.
+V5.1, May 17, 2016: Implement fiber Rx reset (CDR_reset).
+V5.2, May 26, 2016: Update with the GtpTilen design, which is similar to X0YnGTP
+V5.3, June 13, 2016: Update with the 0xEC register about TI_SyncResetRequestEnable.
+V6.1, July 26, 2016: Just recompile to keep up with TS registers changes, no specific changes related to TD.
+V7.1, Apr. 5, 2017: Add the counter check, if there are any cases that the ACK is received, but the SENT is 0. Confirmed.
+      Apr. 6, 2017: Output the ROC_ACK to scope: there is NO extra ack, and the extra counter is ZERO too !?
+		Apr. 6, 2017: Change the timeing (_N to LOW, _P keep at HIGH)
+V7.2, Apr. 11, 2017: Add the 0x170 and 0x174 to readout the non-idle data of fiber#1 and #5 respectively.
+      Apr. 12, 2017: Add the TI Buffer_level readback
+V7.3, June 16, 2017: Compile as the TI/TImaster changes of the Status decoding/encoding, change the FDC to FDR for acknowledges.
+V7.4, Nov. 1, 2017: Propagate the changes in TIFPGAC, using Clk250A for sync with Clk625, updated the ucf file.
+      Nov. 2, 2017: Remove the Clk250A, as the phase delay of Clk250 is easier.
+		Nov. 15, 2017: recompile the TDFPGAC after TsType changes.
+V7.5, Dec. 6, 2017: Use ClkFB250 to output the Encoded_Sync data.  This means the ClkFB addition to Sync block and ClockGen block.
+      Dec. 7, 2017: Change the init_value of Idelay from 31 to 25 for SyncAlign.  Fix the 0x94, number of data_block register.
+V8.1, Feb. 8-12, 2018: Change the ClockCont clock input from ClkVme to ClkSlow.  Replace the Data to FD_clock_in logic,
+   set the FD to IOB=TRUE To be consistent with TIFPGAC.  The SyncSrc default is '0'.
+	   Feb. 14, 2018: Add the optic TRX reset (VmeRst(30), VME DCM reset on VmeClkInG, IDlyCtrl rst 80ns (from one ClkVme cycle)

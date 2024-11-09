@@ -1,0 +1,209 @@
+
+TSFPGA compile history:
+
+v9.2 Oct. 25, 2012: added the P0 TS/TI mode switch.  In TS mode, P0 trigger2 line will
+	carry pulsed trigger1 signal to distribute to TD boards through SD.
+V9.3 Nov. 8, 2012: TS data timing 4ns counter
+V9.4 Nov. 14, 2012: use BusyEn(10) to enable the NumbOfIntBlock(15).  The compile does 
+	not work, because there is a super long line in the VMDL code
+v9.6 Nov. 19, 2012: fixed various bugs, and super long line (BUSY logic).
+v10.6 Dec. 18, 2012: changed the lookup table to 8:3 split from 6:5 split.  
+	Busy monitoring, Trigger time quadrant,
+V11.1 Jan. 11, 2013: New trigger_word format.  Does not compatible with older version.
+	The corresponding TI firmware is V6.1 and later
+
+Vn11.2, Feb. 4, 2013: to use the TS to drive its crate as a TI.  SWM2 is used.
+	SWM2: low, TS mode, trigger2 = pulsed trigger 1, trigger 1 = serialized trigger
+			Sync is Manchester encoded SYNC bits
+	SWM2: high, TI mode, trigger1 = pulsed trigger 1, trigger 2 = pulsed trigger 2
+			Sync is pulsed reset signal
+Vn11.4, Feb. 8, 2013: New data format
+Vn12.1, Feb. 21, 2013: new event type encoding/decoding.  event type lookup table 
+	reconfigured in software (trigger.c, TRGTableLoad routine), 
+	consistent with TI in encoding/decoding
+	powerup/FPGA reprogram automatic IOdelay reset
+	added the SD_link buffer/VME readout
+	
+V1.1, Feb. 25, 2013: first version for TSrev2, which is also compatible with TSrev1,
+	Added one I2C engine for the QSFP modules
+	compiled in Xilinx ISE14.4
+V1.2, Mar. 7, 2013: add two to the block trailer word counters (the counter should include 
+	the block header and block trailer).  Modify ox34 register, so bit(15:8) is 0xff if the 
+	number of blocks is more than 0xff
+V1.4, Mar. 11, 2013: Change the busy/live timer counters, so the counters start after the
+	board is active, which defined as any (VME, Random, ext inputs) trigger source is enabled.
+	To be consistent with TI, the count is using VME clock, and the lower 8-bits are ignored,
+	that is the minimum count is ~7.7 us (was 16 ns).  But the GTP trigger input does not work
+V1.5, Mar. 12, 2013: Add some debug output.  The GTP trigger input works.  Remove the V1.4 
+	and earlier version from repository.
+V1.6, Mar. 13, 2013: simplify the clock distribution.  Remove the clk125, and its DCM
+V2.2, Mar. 20, 2013: redesign the GTP/Ext/FP trigger input, MatchVeto logic, so the matching
+	are using 4ns pulses, the timing is depending on the matching time, which is matching window 
+	width delayed first trigger.  Extend the LED signal, so that they are visible by naked eyes.
+V2.4 Mar. 20, 2013: re-arrange the LEDs; fix the subTS data readout format. throw out data(35:34)
+	and data(17:16), and keep data(33:32).
+V2.5 Mar. 26, 2013: Disable the place holder words in data readout; AND the IDELAYCTRL_delayready 
+	to the LEDA(1).
+V2.6 Mar. 27, 2013: Add the SYNC code 0x99 to assert RESET, 0xCC to deassert RESET,
+	Output TrgType(7:0) (instead of TrgType(8:1)) to be consistent with TI
+v2.7 Apr. 1, 2013: fix the bug for offset 0x34 register.  Bit (15:8) is the number of blocks to be
+	read out, bit(23:16) is the number of event before a block is formed. (same as TI)
+v3.1 Apr. 5, 2013: Add the SYNC history buffer, to move the current 0x98 register to 0xd8.  
+	Use the 0x98 as sync buffer readout to be consistent with TIFPGA.  Add the periodic sync events
+	(offset 0xD4) and forced_sync events (offset 0x100, bit#20).
+V3.2 Apr. 23, 2013: The SYNCevent will not generate trigger2.  Use A24 register 0xFC bit#8 to enable
+	the P0 SW#A SW#B trigger and syncreset output.  When disabled, the output is LOW.
+	Add down_count protection in TrgDAQ for number of interrupt request.
+	Add Reset to the SyncEvtSet signal; Set the TibErr to error status (from PLLLock and ResetDone);
+	0xD4 Bit(15:0) to set the periodic SyncEvent, when 0, automatically disable the periodic SyncEvent.
+v3.3 Apr. 29, 2013: In TrigGen.vhd, add the TempBusy to the IamBusy to disable further triggers.
+v3.4 May 3, 2013: fix the problem that the lookup table trigger2 would also generate SyncEvent if the
+	periodic syncevent is enabled.
+v4.1 May 10, 2013: VME trigger will also generate periodic SyncEvent
+V4.2 May 14, 2013: Add the SyncReset Request logic.  (TI_A, TI_B, LoopBack);  Add the SyncReset 
+	request from TD boards (SD, TI boards etc.) using TS front panel Inhibit input.
+V4.3 May 29, 2013: Added the auto SyncReset on Sync_reset_request; individual partition trigger
+	enable; Front panel ECL output control by register 0x4c; 
+V4.4 June 3, 2013: Added the SlowMEn in MatchVeto for clock domain crossing.  fixed the TS partition 
+	problem introduced by SyncEvent generation (version 3.4)
+V4.5 June 4, 2013: Added the slower rate random triggers.
+V4.6 June 4, 2013: Fixed a bug in partition trigger.  (Partition#3 was using Partition#1 inputs)
+	If the VME number of events (offset 0x8C) is set to 0xffff, VME trigger will be unlimited.
+V5.1 June 18, 2013: Individual partition readout acknowledgement; Partition trigger to TD boards
+	via trigger encoding.  LLLLTSSSS, here LLLL is logic low, T is trigger, SSSS four partitions.
+V5.2 June 25, 2013: add the global TS busy to the subTS busy (SW_B, FrontPanel, TI_A, TI_B). 
+V5.3 July 1, 2013: fixed the TS partition data event header (event type, 3-bit valid)
+V6.1 July 24, 2013: Added the possibility of GTP_trigger_inputs, EXT_trigger_inputs, FP_trigger_inputs 
+	readout logic.  The trigger bits (used for trigger lookup table) is delayed by the Sync_Delay,
+	Sync_serial_delay, QuadTime_phase, and a fixed delay.  The readout is controlled by A24 register 
+	offset 0x18.  The max word count will be 7 per event.  The L1A space should be >=32ns
+V6.2 July 25, 2013: Set the timing word back to the 32-bit + 16-bit mode (from 24-bit + 24-bit mode).
+V6.3 July 29, 2013: Use offset 0x100 bit#24 to latch the BusyTimer and LiveTimer
+V6.4 July 31, 2013: use offset 0x100 bit#25 to reset the L1A number, 0xD8/0xDC to readout the L1A number.
+	Add some fake event to fill the event block at the end of the run.
+V6.5 Aug. 9, 2013: Add SYNCcommand (code 0xBB) to reset the event number and trigger input scalars.
+V6.6 Aug. 12, 2013: Add the downcount protection when the VME set event is 0.
+V7.1 Aug. 14, 2013: Trigger1 decode change, so that the 'dead' time will not be the trigger pulse width
+V7.2 Aug. 16, 2013: Trigger2 decode change (similar to Trigger1);  Trigger rule#1: minimum two ClkGiga between
+	triggers, (trigger to trigger: 36ns-60ns) even when the setting is 0;
+V7.3 Aug. 28, 2013: Added the End_of_run block limit setting. (0xFC, 32--bit)
+V7.4 Sept. 3, 2013: when 0xfc register is set to 0 (default), the End_of_Run limit is disabled.
+V7.5 Sept. 12. 2013: When the set number of block reached, the offset 0x34 bit 28 will be true.
+	(The offset 0x28, bit#31 is not chosen because the bit#31 is already been used on TImaster).
+V7.6 Sept. 18, 2013: Change the EXT (sync front panel) inputs to async inputs (using IDDR)
+V8.1 Oct. 16, 2013: Change the status encoding/decoding; Set the blocklevel through 0x84 register,
+	and propagate to TI.  Added the Sync code 0xaa; Not backward compatible.   This version has to
+	match with TI V15 and later, TD V7 and later.
+V8.2 Oct. 18, 2013: Open a gate for command when BUSY.  (VmeTrig(13:8)=01xx00, xx=10 for blocklevel)
+	And the block level is updated on SyncEvent, which is also the end of block.
+V8.3, Oct. 21, 2013: set the blockLevel default to 1, as the 0 does not make sense.
+V9.1, Nov. 18, 2013: Copied the TSFPGA design (v8.3) to TSFPGAS.  Change the GTP inputs to asynchronous input.
+	Redesigned the lookup tables, (simplified)
+	The software will not be backward compatible.
+V10.1, Dec. 2, 2013: Changed the TI status decoding, so that the TI ID can be transfered. 0xE0-E8 for ID readout
+V11.1, Feb. 26, 2014: Add the protection, so that when the TI is removed (software, for example: the TI is set as 
+	a master), the TS will not	mis-identify the TI as ready.
+V11.2, Apr. 8, 2014: fixed the problem that the offset 0x20 bit8 was not used in trigger control, 
+	which is introduced since V9.1
+V12.1, June 6, 2014: Delay the SyncEvtSet, so it will not disable the previous trigger (very close in timing);
+   close the window (32ns) that the SyncEvtSet is accidentally reset by earlier RocAck;
+	Change the IRQ counter from ClkVme to ClkUsr.
+V12.2, June 20, 2014: update the VME_interface from V7 to V8.
+V12.3, Aug. 7, 2014: use the LVTTL IO as the JTAG command capture
+V12.4, Sept. 17, 2014: fix the generic ECL outputs to BUSY, TRG, etc similar to the arrangement of TI.
+V12.5, Sept. 18, 2014: Add the sync code decoding of 0xEE (4 us wide reset).
+V12.6, Sept. 19, 2014: Reverse the polarity of the GTP inputs to match with GTP
+V12.7, Sept. 23, 2014: Generate a faster TDtrgOut from TrigGen module (instead of the TrgDAQ module).
+V12.8, Sept. 25, 2014: Remove two clock cycles in TSBUSY generation for SWA, SWB and Front panel inputs;
+   move the trigger rule slow clock transition to CLK625 to decrease the base delay
+V12.9, Oct. 1, 2014: Add one clock for SWA, SWB and Front panel busy inputs.  (sync to the Clk625).
+V13.1, Oct. 20, 2014: Expand the 0xD4 from 16 bit to 24 bit; ignore Addr(1:0) for register write.
+   Change offset 0x34 bit 27:24 to the available number of blocks for interrupt
+V13.2, Oct. 21, 2014: adjust the SyncEvtSet for one clock cycle to match with NumbOfIntCount.
+V13.3, Oct. 22, 2014: Copy the TI logic, so that the 0x34 register bit(15:8) is the number of blocks ready for VME read.
+   This should have fixed the data_available, but the SyncEvent Bit is NOT set problem.
+V14.1, Oct. 29, 2014: re-timing the SYNC, so that the SYNC will be sent every 24 clock cycles (96ns). ClkSync/Sync...
+V14.2, Nov. 24, 2014: Use register 0x74 to set the event type for VME trigger and multi-hit.
+V14.3, Dec. 10, 2014: Re-condition the trigger input to one clock cycle to correct the trigger input prescalar (double counting),
+   And re-do the prescaling logic, with an independent counters for pre-scale to improve the latency.
+V14.4, Dec. 18, 2014: Delay the GTP trigger and Front Panel Ext trigger 5 clock cycles less to match with readout.
+   The register 0x48 bit(20:16) can be used to further delay the bit pattern, with default of 00000.
+V15.1, Jan. 16, 2015: Try to fix a tricky problem, that the pulsed trigger has fewer counts than the serialized trigger for VME trigger.
+   This tricky problem is caused by the double application of the trigger rules in VME trigger generation
+
+The following is branched out from the TSFPGAS design, and the following Ver16-Ver17 was (will be) overwritten by TSFPGAS
+ V16.1, Mar. 3, 2015: Use the common design for some modules (0x75012161 as FPGA usercode), compiled, but uses fewer FPGA logic.
+       Mar. 4, 2015: Use the common/BusyDecode and TrigChk for TSboardBusy
+ V16.2, Mar. 5, 2015: Clear the "never assigned" signals reported by Synthesizer
+ V16.3, Mar. 9, 2015: Update the VME registers, like offsets 0x24, 0x98 etc.
+ V16.4, Mar. 10, 2015: Combine the GtpPrescale, ExtPreScale, GtpCount, ExtCount and FPCount, so that the VHDL code is simpler
+    The GTP or EXT trigger generated word does not have the correct Quadrant timing.
+ V17.1, Mar. 12, 2015: Move to Clk250 domain for trigger matching and lookup tables.
+ V17.2, Mar. 16, 2015: Adjust the Trigger bit readout, condensed ucf file.
+ V17.3, Mar. 17, 2015: Redo the TrigBitControl logic, fix some mistakes, so that the prescale factors are 1, 2, 3, 5, 9, 17, ... 2**x+1
+ V17.4, Mar. 19, 2015: Adjust the Trigger_combination logic; Prompt trigger is one clock (16ns) earlier;
+    Fix the VME trigger 0xBC double counting problem, which has existeed for a long time.
+V17.5, Mar. 20, 2015: Delay the BusyRuleVme for 80ns, to OR with BusyRuleGtp to avoid the double counting
+
+V1.1, Mar. 26, 2015: FPGA usercode 0x75013011, incorporated the above V16-17 changes.
+V1.2, Apr. 9, 2015: Added a 2048ns delay for front panel trigger inputs, outputs 16 of the 32 front panel trigger to TSIO.  
+    Expand the periodic trigger generation to 0.5Hz.  Use offset 0x1C bit#20 to enable the TDIO output buffer
+V1.3, Apr. 13, 2015: Implement the Trigger2-->Trigger1 logic with proper delay (0x3C register bits(24:16))
+V1.4, Apr. 16, 2015: Automatic Sync Reset, use ClkDiv for block SyncGen.  AutoSyncRst code 0xEE
+V1.5, Apr. 29, 2015: Trigger rule expansion as implemented by TIFPGAC v1.5, add the Local Trigger using Ext input#20-17.
+      May 4, 2015: Added the Local Trigger busy timer (VME reg 0xA0), After Local Trigger busy, after FastClear busy.
+V1.6, May 6, 2015: Modify the trigger type generation, so that the Local Trigger information is available in the TI.  
+    Use the extra trigger word, which is immediatly after the trigger strobe word.  Bit(15:12)="0111", Bit(11:0): Extra info
+	   May 11, 2015: Generate a MatchTrigOut signal from TrigComb for LocalTrigger Matching. Use one clock wide PreFastClear.
+V1.7, May 26, 2015: Add the reg 0x1C, bit(21) to enable the instant block level update.
+V2.1, Aug. 10, 2015: Use BusySource(11) to enable the duplication local trigger BUSY to disable readout trigger, Bit(31) for monitoring.
+V2.2, Aug. 25, 2015: Extend the BUSY after Local Trigger and BUSY after FastClear to 10 bits, that is ~4us.  Re-design the LocalTriggerRule
+    so it has just one rule, which is much simpler.  (not re-using the TriggerRule by setting others as 0, timing issue?).
+	 Output some internal signals to the single ended outputs on the front panel
+V2.3, Aug. 26, 2015: For external trigger input, requires the pulse width to be 8ns or wider.
+V2.4, Aug. 27, 2015: For GTP trigger input, requires the pulse width to be 8ns or wider
+      Aug. 27, 2015: set the Ext trigger in and GTP trigger in back (not 8ns requirement).  
+	 Fix the bug in TrigComb when transfer from fast clock to slow clock and the system is BUSY. (SyncedToSlow <= DFastTrigger)
+V2.5, Sept. 2, 2015: Do not cut short on LocalBusy (LocalBusy AND DelayedLocalBusy), to eliminate the Branch=0 events.
+V2.6, Sept. 3, 2015: Sync the LocalTrigBusy to Clk625.
+V2.7, Sept. 4, 2015: Sync the RdTrigIn to Clk625, (so that it will not have 4ns short pulse) though it should not be necessary.
+V2.8, Sept. 8, 2015: Output the LocalTriggerBusy stuck on LVTTL#2, which is the LocalBusy ~ 197 us.
+V2.9, Sept. 9, 2015: Added: if reset, FastTrigger = 0; Skip clocks when FastTrigger=1; Disable SyncedToSlow on next clock cycle;
+V2.a, Sept. 11, 2015: Extend the PreLocalTrig to more than one clock cycle; Use LocalTrig to generate PreFastClear, and BusyAfterLT.
+V2.b, Sept. 15, 2015: Shorten the RdTrigIn signal (ends 16ns earlier).  This will prohibit the case when matched with Local trigger 
+    but missed the second trigger word timing.
+V3.1, Oct. 9, 2015: add 0x138 register for minimum busy width after each trigger rule.
+V3.2, Oct. 13, 2015: Use Event word#7 to readout the before-prescaled GTP and EXT inputs (16-bit each)
+      Oct. 15, 2015: use the MgtxReset in the common area
+V3.3, Dec. 9, 2015: Use VmeSetting(15) to disable the VME fifo full busy.
+V4.1, Jan. 7, 2016: Debug the Fastbus crate full issue
+V4.2, Feb. 22, 2016: Added the I2C for optic transceiver AFBR-79EIDZ.  Update the trigger rule to add the Superslow option;
+    Also, added the Trigger_out forced trigger word in TImaster/VmeTrig.
+V4.3, Mar. 9, 2016: Redo the Event word#7, so that the input is extended to the width of Match_window, plus some extra for readout;
+    Change the trigger input scalar to dual range.  Scalar = {Read(31) bit_AND Read(6:0)} & Read(30:7) & {Read(31) bit_OR Read(6:0)}
+	   Mar. 10, 2016: Adjust the PreTableED delay (added two CLOCK cycles) and width (from "0111" to "0110").
+V4.4, Mar. 24, 2016: with the updated TimerResetGen, compensate the one clock in TrigComb (reset to '11').
+V4.5, Mar. 25, 2016: Add the PromptTrigger timing adjustment (to Clk250, or 4ns uncertainty) for front panel output (100 ns wide).
+V5.1, Apr. 5-7, 2016: implement the SyncResetRequest logic.  Use FP_GenIn(16:7) as 10 TD inputs. FPOut(7) as SyncRstReq monitoring
+V5.2, Apr. 12, 2016: Disable the SyncEvent generation and BlockEnd in VmeTrig block, and set its block level the same as TSFPGA.
+      Added the EndOfBlkEnbl, when the setting is not zero.
+V5.3, May 12, 2016: Added one FD in TrgInDelay.sch to improve the timing, this may affect local_trigger BUSY and FastClear
+      June 13, 2016: change the 0xEC register for SyncRstRequestEnable to match with TI/TD setting
+v5.4, June 14, 2016: Disable the FrontPanel Inhibit-->FPSyncRequest.
+V5.5, June 29, 2016: Change the local trigger so that the local trigger lasts no more than several clock cycles between lookup
+    table and triggerRule(even the input could be very long)
+V6.1, July 12, 2016: Use 0x2C bit(5:4) to control if the front panel inputs will mix with GTP inputs. (16-bit each).
+V6.2, Aug. 17, 2016: OR the TempBusy (generated by TS immediately after sending out the SyncEvent) to the Front panel BUSY output.
+      Aug. 18, 2016: TriggerRule default from 0x03030303 to 0x01010101;
+V6.3, Aug. 18, 2016: Output the 0x4C bit(3:0) to LVCMOS(10:7), that is the pin#31-34 of the front panel connector.
+V7.1, Mar. 16, 2017: Add a Helicity input, so that the live/busy timers can count when helicity is high or low (additional 4 counter).
+    FPin(2) is Helicity input, 0x160 is LiveTimer when Helicity=1, 0x164 is BusyTimer when Helicity=1; 
+	   Mar. 29, 2017: Fix the second block header bug, so the data will be 0xff11 with time stamp, 0xff10 without time stamp.
+V7.2, Apr. 11, 2017: Added the Buffer_level broadcast, (similar like the block_levle broadcast), no firmware change, just software
+    addition as 0x84 register is already capable.
+      Nov. 1, 2017: Updated the BlockData generation (CB24CE1), and ucf file.  This compile uses ~25% less FPGA resources as the 
+    scalars are disabled.
+		Nov. 2, 2017: Update the TrigBitControl (scalrEnable), compile again
+V7.3, Dec. 13, 2017: fix the 0x94 Block counter caused by the CB24CE1,
+V8.1, Feb. 12, 2018: SyncSrcEn default to 0; ClockGen: sync Lock250 with Clk200, and TC80ns generated with FDCE, not FDC (Lock250 as Clock)
+      Feb. 14, 2018: Extend the VmeRst(14) to 80ns, Added one clock delay for DCM lock signals.

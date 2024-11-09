@@ -1,0 +1,77 @@
+#!/bin/csh
+#
+# Description:
+#       General Setup file for CODA 3.0 - should reside in the CODA distribution
+#  home directory and be named .setup (ie hidden)
+#
+# Author:
+#       D. Abbott
+#       CEBAF Data Acquisition Group
+#
+
+
+	setenv CODA_VERSION 3.1.0
+	setenv OSTYPE      `uname|sed 's/-/_/'`
+        setenv MACHINE     `uname`-`uname -m`
+
+#        grep Enterprise /etc/redhat-release >& /dev/null
+#        if ($status == 0) then
+#            setenv OSTYPE Linux
+#        endif
+
+#   If not already Set the CODA env variable to the directory path the script is in
+	if ($?CODA != "1") then
+	    set script=($_)
+	    set script_path=`dirname "$script[2]"`
+	    setenv CODA $script_path
+        endif
+
+	if ($?CMSG_HOME != "1") then
+	    setenv CMSG_HOME $CODA/src/cMsg
+	endif
+
+#  Set some defaults
+	setenv CMSG_LIB $CODA/$MACHINE/lib
+	setenv CODA_BIN $CODA/$MACHINE/bin
+	setenv CODA_LIB $CODA/$MACHINE/lib
+	setenv CODA_VME_LIB
+
+#  Now set VME Driver directory
+	setenv CODA_VME $CODA/linuxvme
+
+
+#  Check to see if this is a VME CPU
+#	if (-e /dev/vme_ctl) then
+	   setenv CODA_VME_LIB $CODA_VME/$MACHINE/lib
+#	endif
+
+#   Only set TCL Environment variables for CPUs running ROCs - this is currently 32 bit Linux ARCH (RHEL5 and arm7l)
+#        set RHEL_VERSION=`awk '/release/{print substr($0,match($0,/[123456789]/),1)}' /etc/redhat-release` 
+        if(-e /dev/vme_ctl) then 
+            setenv TCL_LIBRARY $CODA/common/lib/tcl7.4
+            setenv ITCL_LIBRARY $CODA/common/lib/itcl2.0
+            setenv TK_LIBRARY  $CODA/common/lib/tk
+            setenv ITK_LIBRARY  $CODA/common/lib/itk2.0
+            setenv DP_LIBRARY  $CODA/common/lib/dp
+            setenv TIX_LIBRARY $CODA/common/lib/tix
+            setenv TCLINCLUDE_DIR $CODA/common/include
+            setenv TKINCLUDE_DIR $CODA/common/include
+        endif 	
+
+#   Overwrite this in your own .cshrc or setup file!
+	setenv EXPID your_expt_cool_database_name_goes_here
+
+	set lpath = "`echo $path | sed s+$CODA_BIN++g`"
+
+	if ($?CODA_VME) then
+	   set path = ($CODA_BIN $CODA/common/bin $CODA_VME/$MACHINE/bin $lpath )
+	else
+	   set path = ($CODA_BIN $CODA/common/bin $lpath )
+	endif
+
+# Do not clobber LD_LIBRARY_PATH
+	if ($?LD_LIBRARY_PATH) then
+	    setenv LD_LIBRARY_PATH  ${LD_LIBRARY_PATH}:${CODA_LIB}:${CODA_VME_LIB}
+	else
+	    setenv LD_LIBRARY_PATH  ${CODA_LIB}:${CODA_VME_LIB}
+	endif

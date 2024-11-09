@@ -1,0 +1,143 @@
+Considerations when using the F1TDC with other boards in a VME Crate
+--------------------------------------------------------------------
+
+  One area that a user can shoot himself in the foot when populating
+a VME crate for use in an experiment is with overlapping address spaces 
+between boards in the crate. This can be particularly difficult when
+there are different types of modules from different vendors. If addresses
+between boards do overlap this can cause unpredicable behavior that may
+not always be detectable, AND CAN RESULT IN CORRUPTED DATA BEING ACQUIRED.
+
+  The note provides a few guidelines and an example when using a JLAB F1 TDC
+with a CAEN v792 ADC in the same crate.
+
+
+  VME Address Spaces
+  ------------------
+
+    There are 3 general address spaces that VME boards can be designed to respond
+to. These are defined as A32, A24 and A16, and they are all distict and can coexist.
+They are defined by the number of bits necessary to define the address (namely 32, 24,
+or 16 bits).
+
+       A32  -   0xffffffff - 0        4 GBytes of Addressable space
+       A24  -   0x00ffffff - 0        16MBytes of Addressable space
+       A16  -   0x0000ffff - 0        64KBytes of Addressable space
+
+You will note that A16 is contained within A24 which is contained within A32 so there
+can be an ambiguity as to what address space is intended. For this VME spcifies a
+8 bit "address modifier" (AM) tag to denote which address space is intended. Hence, when
+an address cycle is issued on the VME Bus not only are the address bits driven, but there
+are the 8 additional bus lines that specify the Modifier (a total of 40 bits of info).
+
+   A VME board will monitor these lines to determine if the address cycle was intended
+for it. If so then it will begin a data cycle for reading or writing. If two boards in
+the crate think the cycle is for them then they will both attempt to read/write on the 
+bus - which can be the cause of many problems.
+
+
+  F1TDC Address Map
+  -----------------
+
+    The F1 TDC is programed to respond to both A24 and A32 address cycles. The range
+of A24 addresses it will respond to is defined by the micro switches on the board
+itself. The user can adjust bits A12 - A23 (the high 12 bits of A24). Based on this
+choice an F1 board can then respond to any A24 address between the BASE (set by the
+switches) and 4KBytes above the base:
+
+     e.g.    Base set to  0xed0000   (A23-A12 -> 0xED0)
+          Then the board will respond to addresses between 0xed0000 - 0xed0fff.
+
+    The F1 TDC can also respond to A32 addresses, but this must be programmed into
+registers (via A24 access) on the board. All data must be read out via A32 
+access. There are two available windows. This is done automatically in the f1tdcLib
+when the f1Init() function is called. Based on the number of F1 boards in the crate
+each board will allocate a 4MByte window. If there is more than 1 board in the crate
+then a second 16MB "common" window will be created for all boards. This window is
+ment to be the same for all boards because it is used for Multi-Block transfers. The A32
+base address starts at 0x08000000 (128 MBytes).
+
+  e.g.
+   For 1 F1 in a crate there will be one A32 window active
+          A32   0x08000000 - 0x083fffff   (4MB)
+
+   For 3 F1s in a crate there are four A32 windows active
+
+        1)   A32   0x08000000 - 0x083fffff   (4MB)
+        2)   A32   0x08400000 - 0x087fffff   (4MB)
+        3)   A32   0x08800000 - 0x08bfffff   (4MB)
+               (4MB Blank space)
+        4)   A32   0x09000000 - 0x09ffffff   (16MB) (common to all boards)
+
+
+
+   Other Boards
+   ------------
+
+    Any other types of boards that will be used in the crate need to be configured
+so that they do not overlap any of the address space that the F1 TDCs use. You must
+consult the manual for the third party board you are interested in using. 
+   I will use a CAEN V792 ADC as an example to show how to set the switches so that
+they will not interfere with the F1s.
+
+   The V792 has 4 switches that define both an A32 and A24 address space in VME. This
+board will always have both windows active no mater how many boards are in the crate.
+There are additional options for programming a common address space but the library
+c792Lib.o does not support this feature.
+   The user can set the Address bits A31 - A16 (16bits). Once the base is set a single
+v792 will respond to any address cycle between the base and 64Kbyes above the base.
+
+     e.g.   Set bits A31 - A16  to  0x08aa via the switches.
+ 
+          A24 active space -    0xaa0000 -   0xaaffff.
+          A32 active space -  0x08aa0000 - 0x08aaffff.
+
+Note that this these are completely duplicate address spaces. If you access the address
+0xaa0000 in A24 space this will read the exact same register on the same board 
+as 0x08aa0000 in A32 space. Note also that if you have a v792 set up this way with a
+single F1 in the crate as well then there would be NO address conflicts. However if 
+you had more than one F1 in the crate then there WOULD be overlaps in A32 space.
+
+
+  Block Reads (DMA issues)
+  -----------
+    The fastest way to read out either the F1 or the v792 is with a VME block read.
+This is accomplished through use of the DMA engine on the VME-PCI bridge (called
+the Universe chip). There is a seperate library that must be downloaded to enable
+the use of block reads from either board's library (f1tdcLib.o or c792Lib.o). This
+library is called "universeDma.o".
+ 
+    The universe DMA engine must be set up to define which address space it will
+attempt to access (A24 or A32). For the F1 A32 is the only option. For the v792
+one can read data from either A24 or A32. 
+
+  Sample Universe DMA setup:
+      /*initialize (no interrupts) */
+        sysVmeDmaInit(1);
+      /*Set for 64bit PCI transfers */
+        sysVmeDmaSet(4,1);
+      /* A24 (1) or A32 VME Slave (2)*/
+        sysVmeDmaSet(11,2);
+      /* BLK32 (4) or MBLK64 (5) VME transfers */
+        sysVmeDmaSet(12,4);
+
+If the user wishes to support block reads from both an F1 and a v792 board
+in the same crate using the existing libraries then the v792 must be initialized
+to access the board from its A32 window (not A24). This is done by setting the
+swtiches and calling c792Init() using the full A32 address (e.g. 0x08aa0000).
+The universe chip should be set to access an A32 VME slave. This way both block
+read functions for each boards library should function properly.
+
+***NOTE:
+
+    The universe library universeDma.o had to be modified in order to support the F1
+Multiblock readout. As a conseqence the v792 ADC block read function (c792ReadBlock())
+does not work with the new universeDma library. The c792Lib.o had to be updated to
+fix the problem. Please make sure you are using the latest versions of all three of 
+the libraries if you wish to use them for a mixed crate configuation.
+
+ They can be found in:   /site/coda/2.5/extensions/
+
+  Any questions please direct to David Abbott (x7190)  abbottd@jlab.org
+
+     Thanks...

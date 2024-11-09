@@ -1,0 +1,243 @@
+######################################################################
+#
+# README for JLab implementation Linux running on Intel-Based
+#        VME Controllers
+#
+# Much of this README is meant for a "start from scratch" 
+#  installation.  If the Intel-Based Controller was received
+#  from the JLAB DAQ Group, most of the mentioned configuration
+#  should have been done.
+#
+#
+# Author:
+#      Bryan Moffit
+#      TJNAF Data Acquisition Group
+#
+# Revision History:
+#      Initial Revision
+#
+######################################################################
+
+----------------------------------------------------------------------
+TOC
+----------------------------------------------------------------------
+
+Section 1. Distribution Directory Structure and Summary
+Section 2. BIOS Configuration
+Section 3. GRUB Boot-loader Configuration
+Section 4. Serial Port Configuration
+Section 5. User (Shell) Environment Setup
+
+
+----------------------------------------------------------------------
+Section 1. Distribution Directory Structure and Summary
+----------------------------------------------------------------------
+
+All directories (with exception to include) contain a README that
+includes additional information.
+
+Compilation and use of these libraries is facilitated by setting the
+LINUXVME_HOME, LINUXVME_LIB, and LINUXVME_INC environment variables (see
+Section 5).  To insure proper execution, compile this distribution on
+the controller's operating system (RHEL Client 5.* or 7.*).
+
+jvme:
+  A library of routines to facilitate the JLab implementation of the
+  current GE-VME Kernel Driver and API.  The kernel driver and API
+  may change in the future, but this library was written s.t. the
+  names and usage of the routines should not change.
+  This library currently supports:
+  - Mapping of VME windows to userspace
+  - Direct and Linked-List mode DMA
+  - Connecting userspace routines to VME interrupts
+  - Shared memory lock/unlock (mutex) to be used for multi-process
+    access to the VME bus
+
+examples:
+
+  A set of example CODA "readout lists" and utilities.
+
+f1tdclib:
+
+  A version of the JLAB F1TDC library ported to Linux.
+
+fadclib:
+
+  A version of the JLAB Flash ADC library ported to Linux.
+
+v792:
+
+  A version of the CAEN 792 (QDC) module library ported to Linux.
+
+tir:
+
+  A driver library for the JLAB Trigger Interface.
+
+flexio:
+
+  A driver library for the JLAB flexIO.
+
+tsUtil:
+
+  A version of the JLAB Trigger Supervisor utilities library ported
+  to Linux.
+
+include:
+
+  ROC headers/routines used by all CODA 3 readout lists.
+
+----------------------------------------------------------------------
+Section 2. BIOS Configuration
+----------------------------------------------------------------------
+
+BIOS configurations that are used by various VME controllers can be
+found at our group's wiki:
+https://coda.jlab.org/drupal/content/controller-configuration
+
+----------------------------------------------------------------------
+Section 3. GRUB Boot-loader Configuration
+----------------------------------------------------------------------
+
+3A. SETTING ALLOCATED VIRTUAL MEMORY
+  ** NOTE : This is only required for i686 (32bit) **
+
+If the BIOS has been set to allow 256MB for the VME Space (see Section
+2. BIOS Configuration), the size of the allocated virtual memory must
+be increased.  This is easily done by adding to the kernel command
+line in the GRUB Boot-loader configuration file, after the controller
+has been booted.
+
+GRUB configuration filename is typically:
+
+   /etc/grub/menu.lst (may be a soft link)
+OR
+   /etc/grub/grub.conf
+
+Add "vmalloc=256MB" to the "kernel" line.
+e.g.
+
+##
+  # Boot config with vmalloc=256MB
+  title Red Hat Enterprise Linux Client (2.6.18-128.el5)
+        uppermem 524288
+        root (hd0,0)
+        kernel /vmlinuz-2.6.18-128.el5 ro root=LABEL=/ rhgb quiet vmalloc=256MB
+        initrd /initrd-2.6.18-128.el5.img
+##
+
+3B. BOOT-LOADER ACCESS VIA SERIAL PORT
+
+Access to the boot-loader can be achieved through the serial port.  The
+configuration is best explained through example:
+
+##
+  serial --unit=0 -speed=9600 --word=8 --parity=no --stop=1
+  terminal --timeout=10 serial console
+  # Boot config with vmalloc=256MB and serial console.
+  title Red Hat Enterprise Linux Client (2.6.18-128.el5)
+        uppermem 524288
+        root (hd0,0)
+        kernel /vmlinuz-2.6.18-128.el5 ro root=LABEL=/ rhgb quiet vmalloc=256MB console=ttyS0,9600
+        initrd /initrd-2.6.18-128.el5.img
+##
+
+The "serial" command configures COM1 (unit=0) for 9600-8N1
+communication.  If you want to use COM2, set unit=1.  
+
+The "terminal" command sets which device(s) to display the grub boot
+prompt/menu.  The --timeout option provides some time to wait before
+defaulting to the first stated device.  During this timeout period, a
+count down will be shown on each device.
+
+The "console" option in the "kernel" line specifies which device to
+display the booting of the OS.  All output from the OS as it boots
+will be redirected to the console device opt'd with "console".
+
+For more info... "info grub.conf"
+
+----------------------------------------------------------------------
+Section 4. Serial Port Login/Shell Configuration
+----------------------------------------------------------------------
+
+A login shell can be accessed through the Serial Port using "mgetty"
+(see 'man mgetty' for a full description).
+
+4A.  MGETTY STARTUP
+
+The easiest way to startup mgetty on the serial console, is to have it
+started with via Init.  This enables it to be respawned, after
+closing, without the need of a daemon.
+
+In /etc/inittab, add the line:
+
+  s0:2345:respawn:/sbin/mgetty ttyS0
+
+where ttyS0 should refer to COM1.  Reload inittab with the command:
+
+  init q
+
+If mgetty is configured correctly (see 4B), the Serial Port should
+show a console login (hit enter a few times, at the Serial Port
+terminal, if it's not immediate).
+
+4B.  MGETTY CONFIGURATION
+
+mgetty is configured in the file:
+
+  /etc/mgetty+sendfax/mgetty.config
+
+An example configuration of ttyS0 is done with the lines:
+
+  port ttyS0
+        speed 9600
+        term vt102
+        direct y
+
+More info on mgetty.config in Section 2.9 in 'info mgetty'.
+
+For root login through this device, be sure to add "ttyS0" to the list
+of devices in
+
+  /etc/securetty
+
+----------------------------------------------------------------------
+Section 5. User (Shell) Environment Setup
+----------------------------------------------------------------------
+
+The minimal environment setup should have these variables defined
+(tcsh assumed):
+
+# Set arch to i686 or x86_64
+setenv ARCH $(uname -m)
+
+# Change LINUXVME_HOME to the location of this distribution
+setenv LINUXVME_HOME ${HOME}/linuxvme
+
+setenv LINUXVME_BIN ${LINUXVME_HOME}/Linux-${ARCH}/lib
+setenv LINUXVME_LIB ${LINUXVME_HOME}/Linux-${ARCH}/bin
+setenv LINUXVME_INC ${LINUXVME_HOME}/include
+
+setenv LD_LIBRARY_PATH ${LINUXVME_LIB}:${LD_LIBRARY_PATH}
+
+setenv PATH ${LINUXVME_BIN}:${PATH}
+
+The LINUXVME environment variables are meant to allow for drivers
+that may deserve presidence over those included in the CODA distribution.
+
+The CODA 3 environment, with respect to software drivers:
+
+CODA_VME     = ${CODA}/linuxvme
+CODA_VME_LIB = ${CODA_VME}/Linux-${ARCH}/lib
+CODA_VME_BIN = ${CODA_VME}/Linux-${ARCH}/lib
+
+Drivers and readout lists Makefile's look for required libraries (objects
+and headers) in the LINUXVME environment before checking the default
+CODA environment.
+
+To build and install updated versions of libraries, just use coda_install:
+
+   make -B coda_install
+
+Inside the updated library directory.  This will rebuild the library and install
+them in ${CODA_VME_LIB}
+

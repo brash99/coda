@@ -1,0 +1,4 @@
+#!/bin/sh
+git clone https://brash:glpat-osxPyGpisVjxQyuNpeYc@code.jlab.org/fedaq/drivers/v775.git
+git clone https://brash:glpat-osxPyGpisVjxQyuNpeYc@code.jlab.org/fedaq/drivers/v792.git
+git clone https://brash:glpat-osxPyGpisVjxQyuNpeYc@code.jlab.org/fedaq/drivers/ti.git

@@ -1,0 +1,249 @@
+Trigger Supervisor Utility Library (version 2)
+----------------------------------------------
+
+   This vxWorks/Linux library is for support of Version 2 of the
+Jefferson Lab Trigger Supervisor module. It can be used for
+Initialization, configuration, status checking for almost all
+features of the module.
+
+
+ Function Prototypes
+---------------------------
+int tsInit(unsigned int addr, int iflag);
+
+   Initialize TS Utility library at A24 base address - addr
+   iflag =   0  Reset TS and MLU hardware
+             1  Reset TS, not MLU
+             2  Init library only - no hardware reset/initialization
+
+
+int tsMemInit();
+ 
+   Initialize Trigger Supervisor MLU to it Default configuration:
+   For any single trigger input 1-12 latched the
+   corresponding trigger type is 1-12. 
+   For any multiple trigger input latch the trigger type
+   will be 14. Trigger types 0,13,15 are not used.
+   For any trigger all level 1 Accept outputs fire 
+   and all triggers are defined as class 1.
+
+int tsLive(int sflag);
+
+   Return TS Live time as an integer 0-1000 where
+   for example  995 -> 99.5% live
+   sflag = 0  return differential livetime (since last call)
+           1  return total integrated livetime
+
+void tsLiveClear();
+
+   Clear live time scalers
+
+unsigned int tsCsr(unsigned int Val);
+
+   Write to CSR register - Val
+   if Val is 0 then return the current value of the register only
+   CSR value returned after write
+
+unsigned int tsCsr2Set(unsigned int cval);
+unsigned int tsCsr2Clear(unsigned int cval);
+
+   Set/Clear CSR2 register bits defined by cval
+   CSR2 value returned after write
+
+void tsClearStatus();
+
+   Clears latched status bits in CSR register
+
+unsigned int tsEnableInput(unsigned int Val, int tflag);
+
+   Enable front panel inputs to accept triggers
+   Val = 12bit mask for the 12 inputs - 0xfff enables all.
+   tflag = 0  Non-strobed mode - this is the normal operating mode
+           1  strobed mode
+   Function returns Input register value
+
+unsigned int tsRoc(unsigned char b4,unsigned char b3,unsigned char b2,unsigned char b1);
+
+   Set the ROC Acknowledge masks for each of the 4 main ROC banches.
+   each argument is an 8-bit mask   0x0-0xff
+   Function returns ROC register value
+
+unsigned int tsSync(unsigned int Val);
+
+   Set the Sync event interval (Note this does not "Enable" Sync events)
+
+unsigned int tsPrescale(int Num, unsigned int Val);
+
+   Set input Prescaler values
+   Num = precaler number 1-8  (note inputs 9-12 are not prescalable)
+   Val = precale Value
+   Function returns prescaler value actually set
+
+unsigned int tsTimerWrite(int Num, unsigned int Val);
+
+   Set Timer register Values
+   Num = 1-5 specifies which Timer
+             1 Clear Permit
+             2 L2 Accept
+             3 L3 Accept
+             4 Front-End Busy
+             5 Clear Hold
+   Val: Note all timers have 40 ns resolutions so actual
+        time set here will be Val*40 ns
+   Function returns register value
+
+unsigned int tsMemWrite(int Num, unsigned int Val);
+
+   Write a value into a particular MLU location
+   Num = 1-4095 (or 0x001 - 0xfff) MLU memory location - 12 input bit pattern
+   Val = 32bit number representing the programming for that latched pattern
+          bits 0-3   Trigger Class
+          bits 4-7   (unused)
+          bits 8-15  L1 Accept output pattern
+          bits 16-21 Trigger Type (ROC code)
+          bits 22-31 (unused)
+   Function returns Val actually written to the MLU
+
+void tsGo(int iflag);
+void tsStop(int iflag);
+
+   Enable or Disable Trigger Supervisor for triggers
+   iflag = 0  Enable/Disable Go bit only
+           1  Enable/Disable Go + L1 Hardware
+           
+void tsReset(int iflag);
+
+   Reset TS hardware
+   iflag = 0  Initialize to PowerUp State
+           1  Clear Enable/Latched status only
+
+unsigned int tsStatus (int iflag);
+
+   Returns TS status from CSR2 and CSR in one 32bit word
+     bits  0-15  CSR  bits 0-15
+     bits 16-32  CSR2 bits 0-15  
+   iflag = 0  Return status word only
+           1  Print to stdout a user friendly description of Status
+
+void tsTimerStatus();
+
+   Prints to stdout - current state of all TS timers including
+                      timer value in nanoseconds
+
+unsigned int tsState(int iflag);
+
+   Returns TS State register value
+   iflag = 0  Return only the resgister value
+           >0 Print to stdout user friendly description of State
+
+
+unsigned int tsFifoRead(int rflag);
+unsigned int tsFifoCount();
+
+    Read returns the next data word in the trigger FIFO
+    Count returns the total data word count in the trigger FIFO 
+    rflag = 0 Don't check if empty first just FIFO register
+          > 0 check word count first, return 0xfffffff if empty.
+
+
+unsigned int tsScalRead(int Num, int sflag);
+void tsScalClear(unsigned int mask);
+
+    Read/Clear TS scalers
+    Num  = scaler number 0 - 18
+    mask = bitmask of scalers to clear
+            (bit0 = scaler0  etc...   smask = 0x7ffff clears all scalers)
+    sflag = >0 Clear the specified scaler after reading its value
+    tsScalRead function reuturns the current scaler value
+
+unsigned int tsScalAssign(unsigned short u13, unsigned short u14, unsigned short u15,
+	                  unsigned short u16, unsigned short u17, unsigned short u18)
+
+    Assigned Scaler Codes to the 6 available User defined scalers (13-18)
+    See TS Manual or tsUtil.h for definitions of scaler Assign codes (Value 0-15)
+
+void tsScalLatch();
+void tsScalUnLatch();
+
+    Latch/Unlatch all scalers at their current values. This allows user
+    to read all scalers in a correlated state. 
+
+void tsScalClearAll();
+
+    Clear All scalers (including Live time scalers)
+
+
+int  tsIntConnect (unsigned int vector, VOIDFUNCPTR routine, int arg, int poll)
+void tsIntDisconnect()
+int  tsIntEnable(int iflag)
+void tsIntDisable()
+void tsIntAck()
+int  tsIntTest()
+
+     Local Interrupt utility routines (Branch 5 support). User must call
+     tsIntConnect and tsIntEnable to activate support. tsIntAck() is a manual
+     routine for acknowleging the trigger/interrupt. tsIntTest() is the routine the 
+     user would call to poll the trigger status. It returns >0 trigger data when
+     there is a valid trigger available.
+      vector  = 8 bit VME interrupt vector (0 forces use of default value 0xec)
+      routine = Name of user specific ISR to attach to interrupts (not required)
+      arg     = integer argument to User routine if it is used
+      poll    = >0 polling mode enabled
+      iflag   = >0 will clear the global Interrupt counter as well
+
+
+
+Example Code
+------------
+
+/* Initialize Trigger Supervisor (assuming default Address 0xed0000) 3 options */
+  tsInit(0,0);  /* Reset and Init TS and MLU */
+  tsInit(0,1);  /* Reset TS only, leave MLU alone */
+  tsInit(0,2);  /* Setup TS library only - leave Hardware in current state */
+
+
+  tsReset(0);                   /* Initialize */
+  tsCsr2Set(TS_CSR2_LOCK_ALL);  /* ROC Lock mode on all BRANCHES */
+  tsEnableInput(0xfff,0);       /* Enable all Trigger inputs in non-strobe mode */
+  tsRoc(0,0,4,3);               /* Enable ACK 0,1 on BRANCH 1  and ACK 2 on Branch 2*/
+
+/* Synchronization programming */
+  tsSync(100);                      /* schedule Sync every 100th physics trigger */
+  tsCsr2Set(TS_CSR2_ENABLE_SYNC);   /* Enable Scheduled syncs */ 
+
+/* Set nominal Level 2/3 timer values */
+  tsTimerWrite(TS_TIMER_L2A,0x05);   /* Level 2 Timer 40ns/count */
+  tsTimerWrite(TS_TIMER_L3A,0x05);   /* Level 3 Timer 40ns/count */
+
+/* Front End Busy timer 40ns/count */
+  tsTimerWrite(TS_TIMER_FB,250);         /* 250 = 10 microsec */   
+  tsCsr2Set(TS_CSR2_ENABLE_FB_TIMER);    /* Enable FEB Timer */
+
+/*  Construct TS memory data  ---  in the following model, all trigger patterns 
+    that form the memory address are assigned to trigger class 1.  For those 
+    trigger patterns with a single hit, the ROC code is set to be the trigger 
+    input number.  Otherwise, the ROC code is set to 0xE.  All LEVEL 1 ACCEPT 
+    signals are asserted for every pattern.  */
+  tsMemInit();
+
+/* Fix special cases - both inputs 1 and 2 latched - type 13 (0xd) */
+  tsMemWrite(3,0xdff03);
+
+/* Set specific input prescale factors */
+  tsPrescale(1,0);
+  tsPrescale(2,100);
+
+/* Enable the TS to accept triggers */
+  tsGo(0);   /* Enable TS only */
+  tsGo(1);  /* Enable TS and L1 */
+
+
+  tsStop(1); /* Disable GO and L1 */
+
+
+/* Get Final Trigger Count */
+  trig_count = tsScalRead(TS_SCALER_EVENT,0);
+  printf("TS Event Scaler Count = %d\n",trig_count);
+
+
+

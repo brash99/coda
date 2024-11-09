@@ -1,0 +1,122 @@
+
+ModTI history
+	  FPGA usercode: 0x710x2yyz, x=0 for Rev2 TI, x=1 for production TI;
+										 yy firmware version, z firmware revision, "yy.z"
+     Apr. 15, 2014.  Based on TIFPGA V18 design.  The structure is re-orgnized so that
+	it is easier for others to re-use the design. A dump module ROC2Read is added to 
+	test the multi-ROC logic.
+     Apr. 22, 2014. Fixed some importing issues, trigger/readout/sync/clock are OK.
+	Set the SReset(n)=0xNN, no more changing offset.
+     Apr. 29, 2014. Change the SdLink, TpLink from iobufds to ibufds, so the DIFF_TERM can be enabled.
+     May 16, 2014: Update the design to TIFPGA v20.2.  Printed the full design out and tested
+
+V1.1 May 20, 2014: first released version.  Bench tested.
+v1.2 June 2, 2014: fixed the clock inconsistency on IRQ counter and upcount signal.
+V1.3 June 4, 2014: remove the SyncEvtSet from BlkCnt(7:0) counter reset, delay the SyncEvtSet so that
+    it will not block the previous trigger processing(two events are coming closely).  Close the 32ns
+	 window that the SyncEvtSet will be reset by the earlier acknowledgement.
+V2.1 June 10, 2014: add the TI-GTP communication.  The data is pushed out only when the full block is ready.
+V2.2 June 12, 2014: The TI should be compatible with both the CTP and GTP,
+v2.3 June 16, 2014: Add the sync (to Clk100) reset to the GTP Rx_Tx block, esp. the OSERDES
+V2.4 June 17, 2014: Update the VME module from v7 to v8.  Add the Sync code 0xee to generate a 4us SyncReset;
+    On TI, the Bulb mode syncReset will generate a 8ns Reset on the falling edge of the BULB reset.
+	 Accept GTP block level request, transmit Block_Level, and SyncEvent marker.
+V3.1 July 9, 2014: Set the OT#2 as the prompt trigger output.  For TImaster, this is the trigger rule gated
+    triggers, for other TI, this is the HFBR#1 received triggers (quick decode). The width is adjusted (14ns-530ns)
+V3.2 Aug. 21, 2014: set 0x00 reg bit(12:8) to the A24 address (VME64x slot, or switch setting for non-vme64x);
+    bit(13) is the VME64x slot# parity; Disable the periodic transfer of trigger source enabled/disabled.
+	 When used as TImaster, the loopback may lose SYNC command (several %) as discovered Nov. 5, 2014.
+V4.1 Oct. 3, 2014: fix the problem that when there is no event, the fill block at end of run will generate one block.
+    This is bug is caused by the mti firmware, when the logic is moved.  (BlkCnt was number of event count).
+V4.2 Oct. 16, 2014: Added the Trigger2 to generate Trigger1 logic (on TImaster).  Seperated the Trigger rule logic,
+    so that the TrigRule is a block called by the TsGen.  Separate the trigger quadrant timing for Trg1, Trg2 and Sync.
+	 This revision has a bug that mis-aligned the Periodic Sync signal.  There is no periodic sync event generated.
+V4.3 Oct. 20, 2014: Expand the SyncEvtGen from 16 bit to 20 bit.  The max periodic sync event is every 1M blocks.
+    Reg offset 0x34 bit(27:24) is read out as the number of interrupt blocks.  As the block ready is much slower, and
+	 uncertain as the other ROC could back pressure the data.  
+V4.4 Oct. 21, 2014: remove one clock (16ns) from SyncEvtSet delay (0x34 readout only), Error LED enabled by Fiber use.
+V5.1 Oct. 29, 2014: Timing the SYNC command (only as TImaster) to send on the 192ns boundary.
+V5.2-5.f Nov. 6, 2014: Added a IODELAY at Ad9510 clk_sync, to test the slower clock phase alignment
+V6.1 Nov. 7, 2014: The AD9510 ClkSync has perfect timing without the IODELAY.  Remove it.  Added one FD before the OFD_1,
+    just in case that the timing is not good.
+V6.2 Dec. 4, 2014: Output the Token from VME module to register offset 0x1C bit 16 (VME setting).
+V6.4 Dec. 18, 2014: Delay the MGT reset upon 0x22 sync command (wait until the DCM is locked)); Change the MGTreset input
+    logic, so that the 16-bit time stay at 0 normally;
+V7.1 Dec. 22, 2014: Add the trigger lock busy, that is the TI has to respond with TrigReceived before next trigger.
+V7.2 Jan. 5, 2015: use offset 0x28 register bit 22 to monitor the trigger loss (to match with bit 6 setting).
+V7.3 Jan. 8, 2015: Output the HFBR received prompt trigger on 4ns precision
+V7.4 Jan. 8, 2015: re-arrange the MGT_RxReset, (only once), and the forced idle will cover ~1ms after GTPreset.
+V8.1 Jan. 14, 2015: Limit the sync code 0xDD to TI/TD/TS only.  This reset will not be distributed to SD, or other modules.
+V9.1 Feb. 9, 2015: Use common library (modules).  The common area will be used on TI, TD, TS and TIpcie.
+    The 0x74 register will be for event type setting, and the 0x44, 0x64 will be used for front panel TSin code control.
+    The trigger table load may have been changed too
+V9.2 Feb. 16, 2015: Re-do the prompt trigger pulse width logic, so that the PromptTrigger width is on Clk250 only.
+V9.3 Feb. 23, 2015: Connect the SCReadEn from VME module to SYNC module
+V10.1 Mar. 17, 2015: Use Clk250 for TS#code input lookup tables, to minimize the latency
+    Update the TI<-->GTP communication first (ModTI, v8.3); Add the proper VME readback;
+	 
+	 V9.# and V10.# are to be overwritten by ModTI compile
+ 
+V1.1, Mar. 26, 2015: TIFPGA usercode: 0x710x3011, x=0 for rev2 TI, x=1 for prod TI PCBs, The front BUSY meaning depends on MasterMode
+V1.2, Apr. 10, 2015: Add the delay adjustment for TS_code inputs, extend the periodic trigger to ~0.5 Hz
+V1.3, Apr. 13, 2015: recover the Trigger2-->Trigger1 generation logic.  The generation was working, but the latency setting was not.
+V1.4, Apr. 16, 2015: Change the auto sync reset code from 0xDD to 0xEE, fix the AutoSyncRst (to match with 24-clock cycles SYNC
+    command); Use Clk625/ClkDiv instead of the Clk3125 for AutoSyncReset generation.
+V1.5, Apr. 21, 2015: TrigRule range expansion, Rule#4 reached ~500 us.
+V1.6, May 7, 2015: Add the extra trigger word decoding in receiving.  The extra word should be immediately after the trigger word.
+V1.7, May 21, 2015: Add some more BUSY counters (each BUSY source).  Use 0x34 bit(26:24) for number of events for Fastbus readout.
+V1.8, June 17, 2015: use 0x34 bit(23:21) for number of events for FASTBUS readout.  Bit(27:24) back to its original.  
+V1.9, July 23, 2015: Delay the ForcedBlkEnd by one clock cycle (4ns), to match with the ReadOutTrg generated BlkEnd
+     Added the explicit limit on register setting Command(15:9)=0000000.
+V2.1, Oct. 8, 2015: Add a minimum BUSY rule width setting (0x138).
+V2.2, Oct. 13, 2015: Add another event data word for trigger input patterns (raw input pattern).  Use common GTP and MgtpReset modules.
+V2.3, Nov. 18, 2015: Add the trigger pulse delay adjustment.  0x0C, When bit7=1 or bit23=1, use larger step.
+V2.4, Dec. 18, 2015: The added trigger pulse delay affected the ReadoutTrg timing relative to the DSyncEvt (v2.3), fix it
+V3.1, Jan. 14, 2015: Added the ReadOutFifo_full to TI busy (when BusySrcEn(7) is set).  The DataBuffer_full sets BUSY unconditionally.
+V3.2, Jan. 27, 2016: Updated the ClkSelTrgRule (VmeSetting#31); Added the I2C for optic transceivers. (device#5),
+      Feb. 3, 2016: Added the Trigger_word trigger protection, that is if Triggered, the bit(8) is set to 1;
+V3.3, Feb. 4, 2016: Undo the VmeSetting(30), set the I2CAddr to 0xA0 from 0xD0.
+		Feb. 5, 2016: Add new block I2C_Std, which use StateEn to control the transitions (slowed down by a factor of 16).
+      Feb. 16, 2016: Use I2C_state.vhd for optic transceiver I2C, while the SD/CTP still use the old I2C. I2C_std not used.
+V4.1, Mar. 21, 2016: In TsType module, use BUSY to disable FPtriggered, and DLYBUSY to disable TSxbit.
+     Enable the TsBitPreRst when DlyBusy is true in module TSType.
+V4.2, Mar. 21, 2016: Adjust the Front_panel trigger input timing (quadrant).  Donot use this version
+      Mar. 22, 2016: Remove one clock delay in TimreResetGen, added three clocks for TsxBit(11:10) in TSgen
+		This works for the prod_TI, but not the Rev2_TI.  Racing between Clk250 and Clk625 in TimerResetGen block
+V4.3, Mar. 23, 2016: Add an AND gate in TimerResetGen block to delay the signal from FD_clk625 to FD_clk250.
+V4.4, Apr. 7, 2016: update the ROCEn RegisterSet from 8-bit to 32-bit.
+     JUNE 9, 2016: Fix the FPBusy input (was connected to the DataBusy, or DataAvailable).
+V5.1, May 13, 2016: Add the SpeedTest logic, to be removed. (module SPEEDTEST)
+      May 17, 2016: Add the MGT RXcdrReset. (VME reg 0x100, bit#22)
+V5.2, May 26, 2016: Fix the MGT core, so it is almost the same as X0YnGTP cores.
+V5.3, June 9, 2016: Fix the FPBusy input (was connected to the DataBusy, or DataAvailable).
+V5.4, June 13, 2016: Use reg 0xEC, bit(18:10) to enable TIResetReq, and Bit(28:20) to readout the TIResetReq.
+          Move GtpROCid to reg 0x9c bit(24:16).
+V6.1, Aug. 4, 2016: Use reg 0x3C bit#31 to enable the TriggerInput Level readout (when set to '1').
+V7.1, Nov. 11, 2016: Add a TIforward mode, that is use HFBR#5 as TIslaveIN, and HFBR#1-4 as TImaster. (planned, not never implemented)
+      Apr. 7, 2017: Recomplie after the TD changes (with backpressure buffer threshold). 0x4C change too
+V7.2, Apr. 11, 2017: Added the 0x170, 0x174 for fiber#1 and Fiber#5 non-idle inputs readout, (1K deep fifo).
+          Added the BufferLevel setting.
+V7.3, May 9, 2017: Added the bufferLevel to GTP (VTP), which is two data bytes after the BlockLevel. (in GTPTxEnCode).
+V7.4, June 15, 2017: Added the ForceTrgSrcSet, which has higher priority than BUSY in StatusGen block.
+V7.5, July 28, 2017: Added the RunGo, When the TriggerSrc is set to 0x90xxxxxx, the front panel O#4 wil be high.
+V7.6, Aug. 16-17, 2017: Sync the Busy and SendID to Clk625 for StatusGen block, so all the controls are synced with Clk625, or MGT clock.
+         Also, changed the FD to FDR for the last register in synchronizing to Clk625
+V7.7, Sept. 28, 2017: Use vme reg 0x14 bit(28:27) to enable trigger_input_counters control, bit27 to enable the RunGo, bit28 to enable TrigInEn.
+V7.8, Oct. 24, 2017: Reset the Block_number_counter to '1' (CB24CE1), and remove the "+1" in DataGen block.
+      Oct. 25, 2017: Add the event type 0 generation debug, Updated ucf file (ignore VME registers), optimize some VHDL codes.
+		Oct. 26, 2017: disable the TsbitOut update if the current trigger has not been processed yet (in TsType block).
+      Oct. 31, 2017: Generate Clk250A from Clk3125 (x4), then another DCM (Clk2X), used for triggers.
+V7.9, Nov. 2, 2017: Use Clk270 as feed back for the Clk250_DCM, this will delay the Clk250 by 1ns, to match with Clk625. Remove Clk250A.
+V7.A, Nov. 15, 2017: Fix the 'stored' trigger came in during BUSY (in TSGEN/TsType.vhd) by disable trigger coming in during BUSY.
+V7.B, Dec. 6, 2017: Move the ClkReset to ClkFB250, which will conserve the original timing (before 1ns delay for Clk250 in FPGA)
+      Dec. 7, 2017: Set the SigAlign idelay init from 31 to 25.  fix the 0x94 register readout.
+          Next version(revision) to fix the 0x94 register, which is introduced since V7.8
+V7.C, Dec. 8, 2017: Clock Check, SW(010): TestPt(1:4): ClkSync, Clk3125, Clk62.5, Clk250, 
+      Dec. 12, 2017: back to Clk_N 3.6ns. constraint
+V8.1, Feb. 5-9, 2018: AD9510 test, Slow down the ClockCont from ClkVme --> ClkSlow.
+          Replaced "the Data/command as clock in for FDs" with "Enable logic for FDs" in ClockGen and ClockCont blocks.
+			 Added one Clk250 in RstComb block, and set the SyncSrcCode (reg 0x24) default to 0.
+	   Feb. 13, 2018: Delay the VmeReset(21) by 32 ClkVme (was 8); move the VmeReset(14) from SYNC to ClockGen, and extend to 80ns.
+		    Added the VmeReset(30) to reset the opticTransceivers.
+		Feb. 15, 2018: use VmeRst(5), instead of VmeRst(30); add the filler if no signal on fiber chan#4
