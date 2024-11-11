@@ -1,0 +1,4 @@
+./coda_scripts/config/PCSE/coda_component_table.cfg:jlabcoda  PEB  PEB1
+./coda_scripts/setupCODA3.bash:: ${REMEX_CMSG_HOST:=jlabcoda.cnuadmin.cnu.edu}
+./cool/PCSE/ddb/clientRegistration.xml:      <containerhost>jlabcoda.cnuadmin.cnu.edu</containerhost>
+./cool/PCSE/ddb/clientRegistration.xml:      <containerhost>jlabcoda.cnuadmin.cnu.edu</containerhost>
