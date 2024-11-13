@@ -1,26 +1,26 @@
 <coda runtype = "ADCTDC" session = "Luter345">
    <run-start>
-      <run-number>25</run-number>
-      <start-time>11/08/24 14:57:55</start-time>
-      <out-file>/home/coda/coda/data/test_25.evio.0</out-file>
+      <run-number>26</run-number>
+      <start-time>11/12/24 11:30:14</start-time>
+      <out-file>/home/coda/coda/data/test_26.evio.0</out-file>
       <components>
          <component name = "PEB1" type = "PEB">
-            <evt-rate>1.359484</evt-rate>
-            <data-rate>0.33909680324792196</data-rate>
-            <evt-number>82160</evt-number>
+            <evt-rate>1.2874185</evt-rate>
+            <data-rate>0.31872406639004147</data-rate>
+            <evt-number>139</evt-number>
             <min-evt-size>164</min-evt-size>
             <max-evt-size>260</max-evt-size>
-            <average-evt-size>164</average-evt-size>
+            <average-evt-size>235</average-evt-size>
             <min-evt-build-time>0</min-evt-build-time>
             <max-evt-build-time>0</max-evt-build-time>
             <average-evt-build-time>0</average-evt-build-time>
-            <chunk-x-et-buffer>31488</chunk-x-et-buffer>
-            <out-file>/home/coda/coda/data/test_25.evio.0</out-file>
+            <chunk-x-et-buffer>45120</chunk-x-et-buffer>
+            <out-file>/home/coda/coda/data/test_26.evio.0</out-file>
          </component>
          <component name = "ROC1" type = "ROC">
-            <evt-rate>1.3595454</evt-rate>
-            <data-rate>0.3214330937434698</data-rate>
-            <evt-number>82159</evt-number>
+            <evt-rate>1.3181443</evt-rate>
+            <data-rate>0.305578540227452</data-rate>
+            <evt-number>138</evt-number>
             <min-evt-size>0</min-evt-size>
             <max-evt-size>0</max-evt-size>
             <average-evt-size>0</average-evt-size>
@@ -31,30 +31,30 @@
             <out-file></out-file>
          </component>
       </components>
-      <update-time>11/09/24 07:45:10</update-time>
-      <total-evt>82159</total-evt>
+      <update-time>11/12/24 11:32:04</update-time>
+      <total-evt>139</total-evt>
    </run-start>
    <run-end>
-      <end-time>11/09/24 07:45:10</end-time>
-      <total-evt>82159</total-evt>
+      <end-time>11/12/24 11:32:04</end-time>
+      <total-evt>139</total-evt>
       <components>
          <component name = "PEB1" type = "PEB">
-            <evt-rate>1.359484</evt-rate>
-            <data-rate>0.33909680324792196</data-rate>
-            <evt-number>82160</evt-number>
+            <evt-rate>1.2874185</evt-rate>
+            <data-rate>0.31872406639004147</data-rate>
+            <evt-number>139</evt-number>
             <min-evt-size>164</min-evt-size>
             <max-evt-size>260</max-evt-size>
-            <average-evt-size>164</average-evt-size>
+            <average-evt-size>235</average-evt-size>
             <min-evt-build-time>0</min-evt-build-time>
             <max-evt-build-time>0</max-evt-build-time>
             <average-evt-build-time>0</average-evt-build-time>
-            <chunk-x-et-buffer>31488</chunk-x-et-buffer>
-            <out-file>/home/coda/coda/data/test_25.evio.0</out-file>
+            <chunk-x-et-buffer>45120</chunk-x-et-buffer>
+            <out-file>/home/coda/coda/data/test_26.evio.0</out-file>
          </component>
          <component name = "ROC1" type = "ROC">
-            <evt-rate>1.3595454</evt-rate>
-            <data-rate>0.3214330937434698</data-rate>
-            <evt-number>82159</evt-number>
+            <evt-rate>1.3181443</evt-rate>
+            <data-rate>0.305578540227452</data-rate>
+            <evt-number>138</evt-number>
             <min-evt-size>0</min-evt-size>
             <max-evt-size>0</max-evt-size>
             <average-evt-size>0</average-evt-size>
